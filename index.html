@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nộp Hồ Sơ Phản Biện ĐCCT 2026 – Khoa Ngoại Ngữ DNU</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #1e3a5f;
+      --navy-dark: #162d4a;
+      --navy-light: #2a4f7c;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --text: #1a202c;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --red: #ef4444;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --green-border: #86efac;
+      --amber: #d97706;
+      --amber-bg: #fffbeb;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    .header {
+      background: var(--navy);
+      padding: 24px 20px 32px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 50%, rgba(59,130,246,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .header-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9);
+      padding: 5px 14px; border-radius: 20px; font-size: 13px;
+      margin-bottom: 14px; backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .header h1 {
+      color: white; font-size: clamp(22px, 4vw, 32px);
+      font-weight: 700; margin-bottom: 8px; position: relative;
+    }
+    .header p {
+      color: rgba(255,255,255,0.7); font-size: 14px; position: relative;
+    }
+
+    /* PROGRESS STEPS */
+    .progress-wrap {
+      background: var(--navy-dark);
+      padding: 16px 20px;
+      display: flex; justify-content: center;
+    }
+    .steps {
+      display: flex; align-items: center; gap: 0;
+      max-width: 480px; width: 100%;
+    }
+    .step {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 4px; flex: 1; position: relative; cursor: default;
+    }
+    .step-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; transition: all 0.3s;
+      background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.5);
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .step.active .step-dot { background: var(--accent); color: white; border-color: var(--accent); }
+    .step.done .step-dot { background: var(--green); color: white; border-color: var(--green); }
+    .step-label { font-size: 10px; color: rgba(255,255,255,0.4); text-align: center; white-space: nowrap; }
+    .step.active .step-label { color: rgba(255,255,255,0.9); }
+    .step.done .step-label { color: rgba(255,255,255,0.6); }
+    .step-line {
+      height: 2px; flex: 1;
+      background: rgba(255,255,255,0.15);
+      margin-bottom: 16px; transition: background 0.3s;
+    }
+    .step-line.done { background: var(--green); }
+
+    /* MAIN CONTENT */
+    .main { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    /* SCREEN */
+    .screen { display: none; animation: fadeIn 0.25s ease; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* CARD */
+    .card {
+      background: var(--card); border-radius: var(--radius);
+      box-shadow: var(--shadow); margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .card-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .card-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--navy); display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .card-header h2 { font-size: 16px; font-weight: 600; }
+    .card-body { padding: 20px; }
+
+    /* FORM */
+    .field { margin-bottom: 18px; }
+    .field:last-child { margin-bottom: 0; }
+    label.field-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--text);
+      margin-bottom: 6px;
+    }
+    label.field-label .req { color: var(--red); }
+    label.field-label .badge {
+      font-size: 11px; font-weight: 500; padding: 2px 8px;
+      border-radius: 10px; background: var(--amber-bg);
+      color: var(--amber); border: 1px solid #fde68a;
+    }
+    .field-hint { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+    /* CUSTOM DROPDOWN */
+    .dropdown-wrap { position: relative; }
+    .dropdown-trigger {
+      width: 100%; padding: 10px 36px 10px 38px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 14px; font-family: inherit; cursor: pointer;
+      background: white; display: flex; align-items: center;
+      justify-content: space-between; transition: border-color 0.2s;
+      color: var(--text);
+    }
+    .dropdown-trigger:hover { border-color: var(--accent); }
+    .dropdown-trigger.open { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+    .dropdown-trigger .search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-secondary); font-size: 15px; pointer-events: none;
+    }
+    .dropdown-trigger .chevron {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%) rotate(0deg);
+      color: var(--text-secondary); font-size: 12px; pointer-events: none;
+      transition: transform 0.2s;
+    }
+    .dropdown-trigger.open .chevron { transform: translateY(-50%) rotate(180deg); }
+    .dropdown-trigger .placeholder { color: var(--text-secondary); }
+    .dropdown-trigger .selected-val { color: var(--text); font-weight: 500; }
+
+    .dropdown-menu {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 100;
+      background: white; border: 1.5px solid var(--border); border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12); overflow: hidden;
+      display: none; max-height: 300px; flex-direction: column;
+    }
+    .dropdown-menu.open { display: flex; }
+    .dd-search-wrap { padding: 8px; border-bottom: 1px solid var(--border); }
+    .dd-search {
+      width: 100%; padding: 7px 10px 7px 30px; border-radius: 6px;
+      border: 1px solid var(--border); font-size: 13px; font-family: inherit;
+      outline: none; background: var(--bg);
+    }
+    .dd-search-wrap { position: relative; padding: 8px; border-bottom: 1px solid var(--border); }
+    .dd-search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 13px; pointer-events: none; }
+    .dd-list { overflow-y: auto; max-height: 220px; }
+    .dd-item {
+      padding: 9px 14px; font-size: 14px; cursor: pointer;
+      transition: background 0.1s; color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dd-item:hover { background: #eff6ff; color: var(--accent); }
+    .dd-item.selected { background: #eff6ff; font-weight: 600; color: var(--accent); }
+    .dd-item .dd-sub { font-size: 12px; color: var(--text-secondary); font-weight: 400; margin-left: auto; }
+    .dd-empty { padding: 16px; text-align: center; color: var(--text-secondary); font-size: 13px; }
+
+    /* ROLE BADGES */
+    .role-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .role-ct { background: #dbeafe; color: #1d4ed8; }
+    .role-pb { background: #dcfce7; color: #15803d; }
+    .role-tk { background: #fef3c7; color: #92400e; }
+
+    /* SESSION CARD */
+    .session-card {
+      border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 10px; cursor: pointer; transition: all 0.15s;
+      background: white;
+    }
+    .session-card:hover { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.08); }
+    .session-card.selected { border-color: var(--accent); background: #eff6ff; }
+    .session-card .mon-name { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+    .session-card .session-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+    .session-card .session-meta span { display: flex; align-items: center; gap: 3px; }
+    .session-card .roles { display: flex; gap: 6px; flex-wrap: wrap; }
+    .no-sessions { text-align: center; padding: 32px; color: var(--text-secondary); font-size: 14px; }
+
+    /* FILE SECTION */
+    .file-section {
+      border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 14px; overflow: hidden;
+    }
+    .file-section-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .file-section-header:hover { background: #f8fafc; }
+    .file-num-badge {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .file-section-header .file-title { font-size: 14px; font-weight: 600; flex: 1; }
+    .file-section-header .file-who { font-size: 11px; color: var(--text-secondary); }
+    .file-section-header .toggle-arrow { margin-left: auto; color: var(--text-secondary); font-size: 12px; transition: transform 0.2s; }
+    .file-section-header.collapsed .toggle-arrow { transform: rotate(-90deg); }
+    .file-section-body { padding: 16px; border-top: 1px solid var(--border); }
+
+    /* TEXT INPUTS */
+    textarea, input[type=text], input[type=number] {
+      width: 100%; padding: 9px 12px; border-radius: 8px;
+      border: 1.5px solid var(--border); font-size: 14px;
+      font-family: inherit; color: var(--text);
+      transition: border-color 0.2s; outline: none; background: white;
+      resize: vertical;
+    }
+    textarea:focus, input[type=text]:focus, input[type=number]:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.10);
+    }
+
+    /* RADIO */
+    .radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .radio-opt {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 8px; border: 1.5px solid var(--border);
+      cursor: pointer; font-size: 13px; transition: all 0.15s; user-select: none;
+    }
+    .radio-opt:has(input:checked) { border-color: var(--accent); background: #eff6ff; color: var(--accent); font-weight: 600; }
+    .radio-opt input { accent-color: var(--accent); }
+
+    /* SCORE TABLE */
+    .score-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .score-table th { background: #f8fafc; padding: 8px 10px; text-align: left; font-weight: 600; border-bottom: 1.5px solid var(--border); }
+    .score-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .score-table tr:last-child td { border-bottom: none; }
+    .score-table .sub-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; line-height: 1.4; }
+    .score-input { width: 64px !important; text-align: center; padding: 5px 8px !important; }
+    .score-max { font-size: 11px; color: var(--text-secondary); text-align: center; }
+    .score-total-row td { background: #f8fafc; font-weight: 700; }
+    .score-bar { height: 6px; border-radius: 3px; background: var(--border); margin-top: 10px; overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s, background 0.3s; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 11px 24px; border-radius: 8px; font-size: 14px;
+      font-weight: 600; cursor: pointer; border: none;
+      transition: all 0.15s; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: var(--navy); color: white; }
+    .btn-primary:hover { background: var(--navy-light); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-secondary { background: white; color: var(--text); border: 1.5px solid var(--border); }
+    .btn-secondary:hover { background: var(--bg); }
+    .btn-success { background: var(--green); color: white; }
+    .btn-success:hover { background: #15803d; }
+    .btn-full { width: 100%; justify-content: center; padding: 13px; font-size: 15px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+
+    /* ALERTS */
+    .alert {
+      padding: 12px 16px; border-radius: 8px; font-size: 13px;
+      margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px;
+    }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .alert-success { background: var(--green-bg); color: #14532d; border: 1px solid var(--green-border); }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+
+    /* RESULT CARDS */
+    .result-file {
+      border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 16px; margin-bottom: 12px; background: white;
+    }
+    .result-file .rf-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .result-file .rf-title { font-weight: 600; font-size: 14px; }
+    .result-file .rf-sub { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+    .result-file .rf-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .upload-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+    .us-pending { background: #f8fafc; color: var(--text-secondary); }
+    .us-uploading { background: #eff6ff; color: var(--accent); }
+    .us-done { background: var(--green-bg); color: var(--green); }
+    .us-error { background: #fef2f2; color: var(--red); }
+
+    /* SPINNER */
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.7s linear infinite; display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* DIVIDER */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    /* LOADING OVERLAY */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+      display: none; align-items: center; justify-content: center; z-index: 999;
+      backdrop-filter: blur(2px);
+    }
+    .loading-overlay.show { display: flex; }
+    .loading-box {
+      background: white; border-radius: 16px; padding: 32px 40px;
+      text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      max-width: 300px;
+    }
+    .loading-spinner-lg {
+      width: 48px; height: 48px; border: 4px solid #e2e8f0;
+      border-top-color: var(--navy); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+    }
+    .loading-box p { font-size: 14px; color: var(--text-secondary); margin-top: 6px; }
+    .loading-box strong { font-size: 16px; color: var(--text); }
+
+    @media (max-width: 480px) {
+      .btn-row { flex-direction: column; }
+      .radio-group { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-badge">🎓 Khoa Ngoại ngữ – ĐH Đồng Nai</div>
+  <h1>📋 Nộp Hồ Sơ Phản Biện ĐCCT 2026</h1>
+  <p>Kính mời Thầy/Cô điền đầy đủ thông tin để tạo và lưu hồ sơ phản biện</p>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="steps">
+    <div class="step active" id="step-1">
+      <div class="step-dot">1</div>
+      <div class="step-label">Chọn GV</div>
+    </div>
+    <div class="step-line" id="line-1"></div>
+    <div class="step" id="step-2">
+      <div class="step-dot">2</div>
+      <div class="step-label">Chọn môn</div>
+    </div>
+    <div class="step-line" id="line-2"></div>
+    <div class="step" id="step-3">
+      <div class="step-dot">3</div>
+      <div class="step-label">Điền hồ sơ</div>
+    </div>
+    <div class="step-line" id="line-3"></div>
+    <div class="step" id="step-4">
+      <div class="step-dot">4</div>
+      <div class="step-label">Hoàn tất</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SCREEN 1: Chọn GV -->
+  <div class="screen active" id="screen-1">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">👤</div>
+        <h2>Thông tin giảng viên</h2>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label class="field-label">Họ và tên giảng viên <span class="req">*</span></label>
+          <div class="dropdown-wrap" id="dd-gv-wrap">
+            <button type="button" class="dropdown-trigger" id="dd-gv-trigger" onclick="toggleDD('gv')">
+              <span class="search-icon">🔍</span>
+              <span id="dd-gv-display" class="placeholder">Gõ tên để tìm nhanh...</span>
+              <span class="chevron">▼</span>
+            </button>
+            <div class="dropdown-menu" id="dd-gv-menu">
+              <div class="dd-search-wrap">
+                <span class="dd-search-icon">🔍</span>
+                <input type="text" class="dd-search" id="dd-gv-search" placeholder="Gõ tên để tìm..." oninput="filterDD('gv', this.value)" />
+              </div>
+              <div class="dd-list" id="dd-gv-list"></div>
+            </div>
+          </div>
+          <p class="field-hint">Chọn đúng tên của bạn để hệ thống hiển thị lịch và vai trò phù hợp.</p>
+        </div>
+        <div id="gv-selected-info" style="display:none" class="alert alert-info">
+          <span>ℹ️</span>
+          <div id="gv-info-text"></div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:right; margin-top: 4px;">
+      <button class="btn btn-primary" onclick="goToStep2()" id="btn-step2" disabled>
+        Tiếp theo →
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: Chọn môn -->
+  <div class="screen" id="screen-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">📚</div>
+        <h2>Chọn buổi phản biện</h2>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;">
+          Chọn môn học bạn cần nộp hồ sơ phản biện trong danh sách dưới đây:
+        </p>
+        <div id="sessions-list"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goToStep(1)">← Quay lại</button>
+      <button class="btn btn-primary" style="margin-left:auto" onclick="goToStep3()" id="btn-step3" disabled>
+        Tiếp theo →
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: Điền hồ sơ -->
+  <div class="screen" id="screen-3">
+    <div id="session-summary-card" class="card" style="border-left: 4px solid var(--navy)">
+      <div class="card-body" style="padding: 14px 20px;">
+        <div id="session-summary"></div>
+      </div>
+    </div>
+
+    <div id="form-sections"></div>
+
+    <div id="form-error" class="alert alert-error" style="display:none">
+      <span>⚠️</span><div id="form-error-text"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goToStep(2)">← Quay lại</button>
+      <button class="btn btn-primary btn-full" onclick="handleSubmit()" id="btn-submit" style="flex:1">
+        ✅ Tạo & Lưu hồ sơ phản biện
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: Kết quả -->
+  <div class="screen" id="screen-4">
+    <div class="alert alert-success">
+      <span style="font-size:20px">🎉</span>
+      <div>
+        <strong>Hồ sơ đã được tạo thành công!</strong><br>
+        <span id="result-summary-text" style="font-size:12px"></span>
+      </div>
+    </div>
+    <div id="result-files"></div>
+    <div class="alert alert-info" style="margin-top: 12px;">
+      <span>📌</span>
+      <div style="font-size: 13px; line-height: 1.6;">
+        Hồ sơ đã được lưu lên Google Drive và ghi vào bảng theo dõi của bộ môn. Nếu cần hỗ trợ, liên hệ Th.S Dương Thanh Tú.
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-full" onclick="resetAll()" style="margin-top: 12px;">
+      🔄 Nộp hồ sơ cho môn khác
+    </button>
+  </div>
+
+</div><!-- /main -->
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-box">
+    <div class="loading-spinner-lg"></div>
+    <strong id="loading-title">Đang xử lý...</strong>
+    <p id="loading-sub">Vui lòng chờ trong giây lát</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG — SỬA URL NÀY SAU KHI DEPLOY GAS
+// ============================================================
+const GAS_URL = "YOUR_GAS_WEB_APP_URL_HERE";
+
+// ============================================================
+// DATA
+// ============================================================
+const SCHEDULE = [
+  {tt:1, mon:"Nghe 1", gvViet:"Nguyễn Tiến Hân", ngay:"11/05/2026", gio:"07:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:2, mon:"Nghe 2", gvViet:"Nguyễn Tiến Hân", ngay:"11/05/2026", gio:"08:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:3, mon:"Nghe 3", gvViet:"Bùi Công Nguyên Phong", ngay:"11/05/2026", gio:"09:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:4, mon:"Nghe 4", gvViet:"Bùi Công Nguyên Phong", ngay:"11/05/2026", gio:"10:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:5, mon:"Nghe 5", gvViet:"Nguyễn Thị Hà Phương", ngay:"11/05/2026", gio:"13:30", phong:"D103", chuTich:"Dương Thanh Tú", phanBien:"Bùi Công Nguyên Phong", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:6, mon:"Nói 1", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"11/05/2026", gio:"14:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
+  {tt:7, mon:"Nói 2", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"11/05/2026", gio:"15:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
+  {tt:8, mon:"Nói 3", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"12/05/2026", gio:"07:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
+  {tt:9, mon:"Nói 4", gvViet:"Dương Thanh Tú", ngay:"12/05/2026", gio:"08:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Nhâm Thị Thu Nga"},
+  {tt:10, mon:"Nói 5", gvViet:"Dương Thanh Tú", ngay:"12/05/2026", gio:"09:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Nhâm Thị Thu Nga"},
+  {tt:11, mon:"Đọc 1", gvViet:"Nhâm Thị Thu Nga", ngay:"11/05/2026", gio:"07:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Lê Tiến", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:12, mon:"Đọc 2", gvViet:"Nhâm Thị Thu Nga", ngay:"11/05/2026", gio:"08:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Lê Tiến", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:13, mon:"Đọc 3", gvViet:"Trần Văn Tuấn", ngay:"11/05/2026", gio:"09:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:14, mon:"Đọc 4", gvViet:"Trần Văn Tuấn", ngay:"11/05/2026", gio:"10:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:15, mon:"Đọc 5", gvViet:"Lê Tiến", ngay:"11/05/2026", gio:"13:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:16, mon:"Viết 1", gvViet:"Mai Thị Lan Anh", ngay:"11/05/2026", gio:"14:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Ngô Ngọc Thụy", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:17, mon:"Viết 2", gvViet:"Mai Thị Lan Anh", ngay:"11/05/2026", gio:"15:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Ngô Ngọc Thụy", thuKy:"Trần Văn Tuấn"},
+  {tt:18, mon:"Viết 3", gvViet:"Ngô Ngọc Thụy", ngay:"12/05/2026", gio:"07:30", phong:"D104", chuTich:"Nguyễn Tiến Hân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
+  {tt:19, mon:"Viết 4", gvViet:"Lê Tiến", ngay:"12/05/2026", gio:"08:30", phong:"D104", chuTich:"Nguyễn Tiến Hân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
+  {tt:20, mon:"Viết 5", gvViet:"Nguyễn Tiến Hân", ngay:"12/05/2026", gio:"09:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
+  {tt:21, mon:"Ngữ âm thực hành", gvViet:"Vũ Thu Hà", ngay:"12/05/2026", gio:"10:30", phong:"D103", chuTich:"Ngô Ngọc Thụy", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Bùi Công Nguyên Phong"},
+  {tt:22, mon:"Ngữ pháp Tiếng Anh 1", gvViet:"Đặng Thị Tuyết Nhung", ngay:"12/05/2026", gio:"13:30", phong:"D103", chuTich:"Nguyễn Thị Nguyệt Hà", phanBien:"Nhâm Thị Thu Nga", thuKy:"Bùi Công Nguyên Phong"},
+  {tt:23, mon:"Ngữ pháp Tiếng Anh 2", gvViet:"Đặng Thị Tuyết Nhung", ngay:"12/05/2026", gio:"14:30", phong:"D103", chuTich:"Nguyễn Thị Nguyệt Hà", phanBien:"Nhâm Thị Thu Nga", thuKy:"Bùi Công Nguyên Phong"},
+  {tt:24, mon:"Âm vị học", gvViet:"Bùi Công Nguyên Phong", ngay:"12/05/2026", gio:"15:30", phong:"D103", chuTich:"Ngô Ngọc Thụy", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:25, mon:"Ngữ nghĩa học", gvViet:"Ngô Ngọc Thụy", ngay:"11/05/2026", gio:"07:30", phong:"D105", chuTich:"Bùi Công Nguyên Phong", phanBien:"Trương Phi Luân", thuKy:"Bùi Hồng Hà"},
+  {tt:26, mon:"Hình thái - Cú pháp", gvViet:"Bùi Hồng Hà", ngay:"11/05/2026", gio:"08:30", phong:"D105", chuTich:"Ngô Ngọc Thụy", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Văn Nam"},
+  {tt:27, mon:"Văn hóa Anh-Mỹ", gvViet:"Nguyễn Lưu Như Quỳnh", ngay:"12/05/2026", gio:"10:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Văn Nam"},
+  {tt:28, mon:"Phương pháp nghiên cứu khoa học", gvViet:"Trương Phi Luân", ngay:"12/05/2026", gio:"13:30", phong:"D104", chuTich:"Dương Thanh Tú", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
+  {tt:29, mon:"Kỹ năng thuyết trình", gvViet:"Dương Thanh Tú", ngay:"13/05/2026", gio:"07:30", phong:"D103", chuTich:"Bùi Công Nguyên Phong", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
+  {tt:30, mon:"Dịch Anh-Việt", gvViet:"Trương Phi Luân", ngay:"12/05/2026", gio:"14:30", phong:"D104", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
+  {tt:31, mon:"Dịch Việt-Anh", gvViet:"Trương Phi Luân", ngay:"13/05/2026", gio:"08:30", phong:"D103", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
+  {tt:32, mon:"Công nghệ trong giảng dạy", gvViet:"Dương Thanh Tú", ngay:"13/05/2026", gio:"09:30", phong:"D103", chuTich:"Nguyễn Văn Nam", phanBien:"Nguyễn Tiến Hân", thuKy:"Bùi Công Nguyên Phong"},
+  {tt:33, mon:"Tiếng Anh toàn cầu", gvViet:"Trương Phi Luân", ngay:"13/05/2026", gio:"10:30", phong:"D103", chuTich:"Nguyễn Văn Nam", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Nhâm Thị Thu Nga"},
+  {tt:34, mon:"PPDH Tiếng Anh cho trẻ em", gvViet:"Bùi Hồng Hà", ngay:"13/05/2026", gio:"07:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Nguyễn Thị Hà Phương", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:35, mon:"Cơ sở lý luận dạy và học ngôn ngữ", gvViet:"Vũ Thu Hà", ngay:"13/05/2026", gio:"08:30", phong:"D104", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Bùi Hồng Hà", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:36, mon:"Thực hành dạy học tại trường sư phạm", gvViet:"Nguyễn Thị Hà Phương", ngay:"13/05/2026", gio:"09:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Bùi Hồng Hà", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:37, mon:"Phương pháp giảng dạy tiếng Anh 1", gvViet:"Bùi Hồng Hà", ngay:"11/05/2026", gio:"14:30", phong:"D105", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Trần Văn Tuấn", thuKy:"Vũ Thu Hà"},
+  {tt:38, mon:"Phương pháp giảng dạy tiếng Anh 2", gvViet:"Bùi Hồng Hà", ngay:"12/05/2026", gio:"13:30", phong:"D105", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Trần Văn Tuấn", thuKy:"Vũ Thu Hà"},
+  {tt:39, mon:"Kiểm tra đánh giá trong dạy tiếng Anh", gvViet:"Mai Thị Lan Anh", ngay:"12/05/2026", gio:"14:30", phong:"D105", chuTich:"Bùi Hồng Hà", phanBien:"Nguyễn Thị Hà Phương", thuKy:"Vũ Thu Hà"},
+  {tt:40, mon:"Rèn luyện NVSP", gvViet:"Nguyễn Thị Hà Phương", ngay:"12/05/2026", gio:"15:30", phong:"D104", chuTich:"Mai Thị Lan Anh", phanBien:"Bùi Hồng Hà", thuKy:"Vũ Thu Hà"},
+  {tt:41, mon:"Giao Thoa Văn Hóa", gvViet:"Bùi Hồng Hà", ngay:"13/05/2026", gio:"13:30", phong:"D103", chuTich:"Trương Phi Luân", phanBien:"Dương Thanh Tú", thuKy:"Vũ Thu Hà"},
+  {tt:42, mon:"Bình Đẳng Giới và Hòa Nhập Xã Hội", gvViet:"Dương Thanh Tú", ngay:"13/05/2026", gio:"14:30", phong:"D103", chuTich:"Trương Phi Luân", phanBien:"Mai Thị Lan Anh", thuKy:"Nguyễn Văn Nam"},
+  {tt:43, mon:"Phân Tích diễn ngôn", gvViet:"Trương Phi Luân", ngay:"11/05/2026", gio:"09:30", phong:"D105", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Ngô Ngọc Thụy", thuKy:"Nguyễn Văn Nam"},
+  {tt:44, mon:"Văn Học Anh Mỹ", gvViet:"Nguyễn Lưu Như Quỳnh", ngay:"11/05/2026", gio:"10:30", phong:"D105", chuTich:"Trương Phi Luân", phanBien:"Nguyễn Văn Nam", thuKy:"Ngô Ngọc Thụy"},
+  {tt:45, mon:"Phát triển tài liệu giảng dạy", gvViet:"Nguyễn Thị Hà Phương", ngay:"13/05/2026", gio:"10:30", phong:"D104", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Bùi Hồng Hà", thuKy:"Ngô Ngọc Thụy"},
+];
+
+const CRITERIA = [
+  {tc:"Thông tin chung", yc:"Thể hiện đầy đủ các thông tin chung về học phần.", max:5},
+  {tc:"Nguồn học liệu", yc:"Nêu rõ và đầy đủ các nguồn học liệu cần thiết được xuất bản trong 5–10 năm gần đây.", max:5},
+  {tc:"Mô tả học phần (1)", yc:"Phù hợp với nội dung mô tả ở Mục 3 của mẫu đề cương.", max:5},
+  {tc:"Mô tả học phần (2)", yc:"Ngắn gọn nhưng thể hiện đầy đủ và rõ ràng các nội dung chính.", max:5},
+  {tc:"Chuẩn đầu ra (1)", yc:"Thể hiện năng lực (kiến thức, kỹ năng và thái độ) sau khi hoàn thành học phần.", max:9},
+  {tc:"Chuẩn đầu ra (2)", yc:"Diễn đạt rõ ràng, bắt đầu bằng động từ Bloom, có thể quan sát và đo lường được.", max:5},
+  {tc:"Chuẩn đầu ra (3)", yc:"Thể hiện rõ trình độ năng lực và xác định hợp lý đối với từng CĐR.", max:5},
+  {tc:"Chuẩn đầu ra (4)", yc:"Thể hiện việc đóng góp vào các CĐR của chương trình đào tạo.", max:5},
+  {tc:"Nội dung học phần (1)", yc:"Đảm bảo phù hợp và đạt được CĐR học phần.", max:8},
+  {tc:"Nội dung học phần (2)", yc:"Thể hiện đầy đủ Giờ dự giảng, giờ tự học và giờ học khác.", max:5},
+  {tc:"PPDH (1)", yc:"Nêu rõ các phương pháp giảng dạy được sử dụng và mục đích.", max:5},
+  {tc:"PPDH (2)", yc:"Tương thích với CĐR học phần.", max:5},
+  {tc:"PPDH (3)", yc:"Nêu rõ hướng dẫn cho sinh viên về cách học và các yêu cầu bài tập.", max:5},
+  {tc:"Đánh giá học phần (1)", yc:"Bao gồm đủ đánh giá quá trình và đánh giá kết thúc.", max:5},
+  {tc:"Đánh giá học phần (2)", yc:"Tương thích với CĐR học phần.", max:5},
+  {tc:"Đánh giá học phần (3)", yc:"Nêu cụ thể nội dung đánh giá, CĐR cần đánh giá, tiêu chí và tỷ lệ điểm.", max:8},
+  {tc:"Quy định học phần (1)", yc:"Nêu rõ các quy định về tham dự lớp học và hành vi trong lớp.", max:5},
+  {tc:"Quy định học phần (2)", yc:"Nêu rõ các quy định, quy chế mà GV và SV phải tuân thủ.", max:5},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  gv: null,
+  session: null,
+  roles: [],
+  filesNeeded: [],
+  formData: {},
+  scores: Array(18).fill(0),
+  currentStep: 1,
+};
+
+// ============================================================
+// INIT
+// ============================================================
+const ALL_GV = [...new Set([
+  ...SCHEDULE.map(s=>s.gvViet), ...SCHEDULE.map(s=>s.chuTich),
+  ...SCHEDULE.map(s=>s.phanBien), ...SCHEDULE.map(s=>s.thuKy),
+])].sort((a,b)=>a.localeCompare(b,'vi'));
+
+function init() {
+  renderGVDropdown();
+  document.addEventListener('click', closeAllDropdowns);
+}
+
+// ============================================================
+// DROPDOWN ENGINE
+// ============================================================
+const ddState = {};
+
+function toggleDD(id, event) {
+  if(event) event.stopPropagation();
+  const menu = document.getElementById(`dd-${id}-menu`);
+  const trigger = document.getElementById(`dd-${id}-trigger`);
+  const isOpen = menu.classList.contains('open');
+  closeAllDropdowns();
+  if(!isOpen) {
+    menu.classList.add('open');
+    trigger.classList.add('open');
+    const search = document.getElementById(`dd-${id}-search`);
+    if(search) setTimeout(()=>search.focus(),50);
+  }
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.dropdown-trigger.open').forEach(t => t.classList.remove('open'));
+}
+
+function filterDD(id, query) {
+  const list = document.getElementById(`dd-${id}-list`);
+  const items = list.querySelectorAll('.dd-item');
+  const q = query.toLowerCase().normalize('NFC');
+  let visible = 0;
+  items.forEach(item => {
+    const txt = item.dataset.label.toLowerCase().normalize('NFC');
+    const show = txt.includes(q);
+    item.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  const empty = list.querySelector('.dd-empty');
+  if(empty) empty.style.display = visible === 0 ? '' : 'none';
+}
+
+function renderGVDropdown() {
+  const list = document.getElementById('dd-gv-list');
+  list.innerHTML = ALL_GV.map(gv => {
+    const count = SCHEDULE.filter(s=>s.gvViet===gv||s.chuTich===gv||s.phanBien===gv||s.thuKy===gv).length;
+    return `<div class="dd-item" data-label="${gv}" onclick="selectGV('${gv.replace(/'/g,"\\'")}')">
+      👤 ${gv} <span class="dd-sub">${count} buổi</span>
+    </div>`;
+  }).join('') + '<div class="dd-empty" style="display:none">Không tìm thấy</div>';
+}
+
+function selectGV(gv) {
+  state.gv = gv;
+  state.session = null;
+  document.getElementById('dd-gv-display').innerHTML = `<span class="selected-val">👤 ${gv}</span>`;
+  closeAllDropdowns();
+  document.getElementById('dd-gv-search').value = '';
+  filterDD('gv','');
+
+  const sessions = SCHEDULE.filter(s=>s.gvViet===gv||s.chuTich===gv||s.phanBien===gv||s.thuKy===gv);
+  const info = document.getElementById('gv-selected-info');
+  document.getElementById('gv-info-text').innerHTML = `Xin chào <strong>${gv}</strong>! Bạn tham gia <strong>${sessions.length}</strong> buổi phản biện.`;
+  info.style.display = 'flex';
+  document.getElementById('btn-step2').disabled = false;
+}
+
+// ============================================================
+// STEP NAVIGATION
+// ============================================================
+function goToStep(n) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(`screen-${n}`).classList.add('active');
+  state.currentStep = n;
+  updateProgress(n);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function updateProgress(active) {
+  for(let i=1;i<=4;i++){
+    const step = document.getElementById(`step-${i}`);
+    step.classList.remove('active','done');
+    if(i < active) step.classList.add('done');
+    else if(i === active) step.classList.add('active');
+    if(i < 4) {
+      const line = document.getElementById(`line-${i}`);
+      line.classList.toggle('done', i < active);
+    }
+  }
+}
+
+function goToStep2() {
+  if(!state.gv) return;
+  renderSessions();
+  goToStep(2);
+}
+
+function goToStep3() {
+  if(!state.session) return;
+  renderFormSections();
+  goToStep(3);
+}
+
+// ============================================================
+// SESSION LIST
+// ============================================================
+function getRoles(gv, row) {
+  const r = [];
+  if(row.chuTich===gv) r.push('Chủ tịch hội đồng');
+  if(row.phanBien===gv) r.push('Phản biện');
+  if(row.thuKy===gv) r.push('Thư ký');
+  return r;
+}
+
+function getFilesNeeded(roles) {
+  const f = new Set();
+  roles.forEach(r => {
+    if(r==='Thư ký') {f.add(1);f.add(3);f.add(4);}
+    if(r==='Phản biện') {f.add(2);f.add(4);}
+    if(r==='Chủ tịch hội đồng') {f.add(3);f.add(4);}
+  });
+  return [...f].sort();
+}
+
+function roleBadge(r) {
+  const cls = r==='Chủ tịch hội đồng'?'role-ct':r==='Phản biện'?'role-pb':'role-tk';
+  const icon = r==='Chủ tịch hội đồng'?'👑':r==='Phản biện'?'✍️':'📝';
+  return `<span class="role-badge ${cls}">${icon} ${r}</span>`;
+}
+
+function renderSessions() {
+  const container = document.getElementById('sessions-list');
+  const sessions = SCHEDULE.filter(s=>
+    s.gvViet===state.gv||s.chuTich===state.gv||s.phanBien===state.gv||s.thuKy===state.gv
+  );
+  if(!sessions.length){
+    container.innerHTML = '<div class="no-sessions">Không có buổi phản biện nào.</div>';
+    return;
+  }
+  // Group by day
+  const byDay = {};
+  sessions.forEach(s=>{
+    if(!byDay[s.ngay]) byDay[s.ngay] = [];
+    byDay[s.ngay].push(s);
+  });
+  const dayNames = {'11/05/2026':'Thứ Hai, 11/05/2026','12/05/2026':'Thứ Ba, 12/05/2026','13/05/2026':'Thứ Tư, 13/05/2026'};
+
+  container.innerHTML = Object.entries(byDay).map(([day,rows])=>`
+    <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px;">
+      📅 ${dayNames[day]||day}
+    </div>
+    ${rows.map(row=>{
+      const roles = getRoles(state.gv, row);
+      const isSelected = state.session && state.session.tt === row.tt;
+      return `<div class="session-card${isSelected?' selected':''}" onclick="selectSession(${row.tt})" id="sc-${row.tt}">
+        <div class="mon-name">${row.mon}</div>
+        <div class="session-meta">
+          <span>🕐 ${row.gio}</span>
+          <span>🚪 Phòng ${row.phong}</span>
+          <span>✏️ GV viết: ${row.gvViet}</span>
+        </div>
+        <div class="roles">${roles.map(roleBadge).join('')}</div>
+      </div>`;
+    }).join('')}
+  `).join('');
+}
+
+function selectSession(tt) {
+  const row = SCHEDULE.find(s=>s.tt===tt);
+  state.session = row;
+  state.roles = getRoles(state.gv, row);
+  state.filesNeeded = getFilesNeeded(state.roles);
+  document.querySelectorAll('.session-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById(`sc-${tt}`)?.classList.add('selected');
+  document.getElementById('btn-step3').disabled = false;
+}
+
+// ============================================================
+// FORM SECTIONS
+// ============================================================
+const FILE_META = {
+  1:{name:"Biên bản họp hội đồng", icon:"📋", color:"#1e3a5f", bg:"#e8edf5", who:"Thư ký làm – 1 bản/hội đồng"},
+  2:{name:"Nhận xét của phản biện", icon:"✍️", color:"#15803d", bg:"#f0fdf4", who:"Phản biện làm – 1 bản/hội đồng"},
+  3:{name:"Phiếu đánh giá – nhận xét", icon:"📝", color:"#92400e", bg:"#fffbeb", who:"Thư ký & Chủ tịch làm – 2 bản/hội đồng"},
+  4:{name:"Phiếu đánh giá chấm điểm", icon:"⭐", color:"#7c2d52", bg:"#fdf2f8", who:"Tất cả thành viên – 3 bản/hội đồng"},
+};
+
+function renderFormSections() {
+  const s = state.session;
+  // Session summary
+  document.getElementById('session-summary').innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <span style="font-weight:700;font-size:16px">${s.mon}</span>
+      ${state.roles.map(roleBadge).join('')}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:13px;color:var(--text-secondary)">
+      <span>🕐 ${s.gio} · 📅 ${s.ngay} · 🚪 Phòng ${s.phong}</span>
+      <span>✏️ GV viết: <strong style="color:var(--text)">${s.gvViet}</strong></span>
+    </div>
+  `;
+
+  let html = '';
+  state.filesNeeded.forEach(fn=>{
+    const m = FILE_META[fn];
+    const colorNum = {1:'1e3a5f',2:'15803d',3:'92400e',4:'7c2d52'}[fn];
+    html += `
+    <div class="file-section">
+      <div class="file-section-header" onclick="toggleSection(${fn})">
+        <div class="file-num-badge" style="background:#${colorNum}1a;color:#${colorNum}">F${fn}</div>
+        <div>
+          <div class="file-title">${m.icon} ${m.name}</div>
+          <div class="file-who">${m.who}</div>
+        </div>
+        <div class="toggle-arrow">▼</div>
+      </div>
+      <div class="file-section-body" id="fsb-${fn}">
+        ${renderFileFields(fn)}
+      </div>
+    </div>`;
+  });
+  document.getElementById('form-sections').innerHTML = html;
+  initScoreListeners();
+}
+
+function toggleSection(fn) {
+  const body = document.getElementById(`fsb-${fn}`);
+  const header = body.previousElementSibling;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  header.classList.toggle('collapsed', !collapsed);
+}
+
+function renderFileFields(fn) {
+  if(fn===1) return renderFile1();
+  if(fn===2) return renderFile2();
+  if(fn===3) return renderFile3();
+  if(fn===4) return renderFile4();
+  return '';
+}
+
+function tf(id, label, hint='', placeholder='', multiline=false, required=false, badge='') {
+  const badgeHtml = badge ? `<span class="badge">${badge}</span>` : '';
+  const req = required ? '<span class="req">*</span>' : '';
+  return `<div class="field">
+    <label class="field-label">${label} ${req} ${badgeHtml}</label>
+    ${hint?`<p class="field-hint" style="margin-bottom:6px">${hint}</p>`:''}
+    ${multiline
+      ? `<textarea id="f-${id}" rows="3" placeholder="${placeholder}" oninput="setField('${id}',this.value)"></textarea>`
+      : `<input type="text" id="f-${id}" placeholder="${placeholder}" oninput="setField('${id}',this.value)" />`
+    }
+  </div>`;
+}
+
+function radioField(id, label, opts) {
+  return `<div class="field">
+    <label class="field-label">${label}</label>
+    <div class="radio-group">
+      ${opts.map(o=>`<label class="radio-opt">
+        <input type="radio" name="${id}" value="${o.val}" onchange="setField('${id}','${o.val}')"> ${o.label}
+      </label>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderFile1() {
+  return tf('gio_ket_thuc','Giờ kết thúc phiên họp','','VD: 09:00',false,true)
+    + tf('vang_mat','Thành viên vắng mặt và lý do','','Để trống nếu không có',true)
+    + tf('phat_bieu','Tóm tắt phần phát biểu của hội đồng','','',true)
+    + tf('tra_loi','Tóm tắt phần trả lời của tác giả','','',true)
+    + tf('ket_luan_ct','Kết luận của Chủ tịch hội đồng','Tóm tắt về mục tiêu, CĐR, hình thức giảng dạy, KTĐG và giá trị sử dụng','',true)
+    + tf('tong_diem','Tổng số điểm','','VD: 85')
+    + tf('xep_loai','Xếp loại','','VD: Đạt / Tốt / Xuất sắc')
+    + tf('ket_luan','Kết luận','','',true)
+    + tf('kien_nghi','Kiến nghị của Hội đồng','Những điểm cần sửa chữa, bổ sung','',true);
+}
+
+function renderFile2() {
+  return tf('pb_hinh_thuc','1. Về hình thức','','',true)
+    + tf('pb_noi_dung','2. Về nội dung (mục tiêu, CĐR, hình thức dạy học, KTĐG)','','',true)
+    + tf('pb_y_nghia','3. Về ý nghĩa khoa học và thực tiễn','','',true)
+    + tf('pb_dg_chung','4. Đánh giá chung','','',true)
+    + tf('pb_gop_y','5. Góp ý','','',true)
+    + radioField('pb_ket_luan','6. Kết luận',[
+        {val:'dong_y',label:'✅ Đồng ý nghiệm thu'},
+        {val:'khong_dong_y',label:'❌ Không đồng ý nghiệm thu'},
+      ]);
+}
+
+function renderFile3() {
+  const nguoi = state.roles.includes('Thư ký') ? state.session.thuKy
+    : state.roles.includes('Chủ tịch hội đồng') ? state.session.chuTich : '';
+  return `<div class="alert alert-info" style="margin-bottom:14px"><span>ℹ️</span>
+    <div>Người nhận xét: <strong>${nguoi}</strong></div></div>`
+    + tf('f3_hinh_thuc','1. Về hình thức trình bày','','',true)
+    + tf('f3_cau_truc','2. Về cấu trúc của đề cương','','',true)
+    + tf('f3_day_hoc','3. Về hình thức dạy học và kiểm tra đánh giá','','',true)
+    + tf('f3_gop_y','4. Đề xuất góp ý','','',true)
+    + radioField('f3_ket_qua','5. Kết quả đánh giá',[
+        {val:'dong_y',label:'✅ Đồng ý nghiệm thu'},
+        {val:'khong_dong_y',label:'❌ Không đồng ý nghiệm thu'},
+      ]);
+}
+
+function renderFile4() {
+  const nguoi = state.roles.includes('Phản biện') ? state.session.phanBien
+    : state.roles.includes('Chủ tịch hội đồng') ? state.session.chuTich : state.session.thuKy;
+  return `<div class="alert alert-info" style="margin-bottom:14px"><span>ℹ️</span>
+    <div>Người đánh giá: <strong>${nguoi}</strong></div></div>
+    <div style="overflow-x:auto">
+    <table class="score-table">
+      <thead><tr>
+        <th style="width:55%">Tiêu chí</th>
+        <th style="width:12%;text-align:center">Tối đa</th>
+        <th style="width:18%;text-align:center">Điểm của bạn</th>
+      </tr></thead>
+      <tbody>
+        ${CRITERIA.map((c,i)=>`<tr>
+          <td><div style="font-weight:600">${c.tc}</div><div class="sub-label">${c.yc}</div></td>
+          <td class="score-max">${c.max}</td>
+          <td style="text-align:center"><input type="number" class="score-input" id="sc-${i}" min="0" max="${c.max}" value="0" oninput="updateScore(${i},this.value)" /></td>
+        </tr>`).join('')}
+        <tr class="score-total-row">
+          <td colspan="2" style="text-align:right">Tổng điểm</td>
+          <td style="text-align:center;font-size:18px" id="score-total">0<span style="font-size:11px;font-weight:400;color:var(--text-secondary)">/100</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="score-bar"><div class="score-bar-fill" id="score-bar-fill" style="width:0%;background:var(--red)"></div></div>
+    <div id="score-status" style="font-size:12px;color:var(--text-secondary);margin-top:6px;text-align:center"></div>
+    ` + tf('f4_nhan_xet','Nhận xét chung','','',true);
+}
+
+function initScoreListeners() {}
+
+function updateScore(i, val) {
+  const max = CRITERIA[i].max;
+  const n = Math.max(0, Math.min(max, parseInt(val)||0));
+  state.scores[i] = n;
+  document.getElementById(`sc-${i}`).value = n;
+  const total = state.scores.reduce((a,b)=>a+b,0);
+  const el = document.getElementById('score-total');
+  if(el) el.innerHTML = `${total}<span style="font-size:11px;font-weight:400;color:var(--text-secondary)">/100</span>`;
+  const bar = document.getElementById('score-bar-fill');
+  if(bar) {
+    bar.style.width = total + '%';
+    bar.style.background = total>=80?'var(--green)':total>=60?'#f59e0b':'var(--red)';
+  }
+  const status = document.getElementById('score-status');
+  if(status) status.innerHTML = total>0?(total>=80?'✅ Đạt yêu cầu phê duyệt (≥ 80 điểm)':'⚠️ Chưa đạt yêu cầu (< 80 điểm)'):'';
+}
+
+function setField(id, val) {
+  state.formData[id] = val;
+}
+
+// ============================================================
+// DOCUMENT GENERATION
+// ============================================================
+function buildDoc(fileNum) {
+  const s = state.session;
+  const f = state.formData;
+  const sc = state.scores;
+
+  if(fileNum===1) return `BIÊN BẢN HỌP HỘI ĐỒNG ĐÁNH GIÁ - NGHIỆM THU ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+================================================================================
+
+1. Tên đề cương: ${s.mon}
+   Tác giả: ${s.gvViet}
+
+2. Thời gian họp: ${s.gio} giờ, ngày ${s.ngay}
+   Thời gian kết thúc: ${f.gio_ket_thuc||'……'} giờ
+
+3. Địa điểm: Phòng ${s.phong}, Trường Đại học Đồng Nai
+
+4. Thành phần tham dự:
+   4.1. Thành viên có mặt:
+       - Chủ tịch Hội đồng: ${s.chuTich}
+       - Thư ký Hội đồng: ${s.thuKy}
+       - Phản biện: ${s.phanBien}
+   4.2. Thành viên vắng mặt: ${f.vang_mat||'Không có'}
+
+5. Nội dung phiên họp:
+   Sau khi ${s.thuKy} đọc Quyết định thành lập Hội đồng, ${s.chuTich} điều hành phiên họp.
+
+   5.1. Phần trình bày của tác giả:
+   ${s.gvViet} trình bày tổng quan đề cương chi tiết học phần bao gồm mục tiêu, chuẩn đầu ra, hình thức giảng dạy và kiểm tra đánh giá.
+
+   5.2. Phần nhận xét của phản biện (có văn bản kèm theo).
+
+   5.3. Phần phát biểu, đặt câu hỏi:
+${f.phat_bieu||''}
+
+   5.4. Phần trả lời của tác giả:
+${f.tra_loi||''}
+
+   5.5. Kết luận của Chủ tịch Hội đồng:
+${f.ket_luan_ct||''}
+
+6. Xếp loại:
+   - Tổng số điểm: ${f.tong_diem||''}
+   - Xếp loại: ${f.xep_loai||''}
+   - Kết luận: ${f.ket_luan||''}
+
+7. Kiến nghị của Hội đồng:
+${f.kien_nghi||''}
+
+Phiên họp kết thúc vào lúc ${f.gio_ket_thuc||'……'} giờ, ngày ${s.ngay}.
+
+         CHỦ TỊCH HỘI ĐỒNG                    THƯ KÝ
+           ${s.chuTich}                    ${s.thuKy}`;
+
+  if(fileNum===2) return `NHẬN XÉT - PHẢN BIỆN ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+================================================================================
+
+Tên đề cương: ${s.mon}
+Tác giả: ${s.gvViet}
+Người phản biện: ${s.phanBien}
+Nơi công tác: Trường Đại học Đồng Nai – Khoa Ngoại Ngữ
+
+NHẬN XÉT:
+
+1. Về hình thức:
+${f.pb_hinh_thuc||''}
+
+2. Về nội dung:
+${f.pb_noi_dung||''}
+
+3. Về ý nghĩa khoa học và thực tiễn:
+${f.pb_y_nghia||''}
+
+4. Đánh giá chung:
+${f.pb_dg_chung||''}
+
+5. Góp ý:
+${f.pb_gop_y||''}
+
+6. Kết luận: ${f.pb_ket_luan==='dong_y'?'[X] Đồng ý nghiệm thu     [ ] Không đồng ý nghiệm thu':'[ ] Đồng ý nghiệm thu     [X] Không đồng ý nghiệm thu'}
+
+                              Đồng Nai, ngày ${s.ngay}
+                         Người nhận xét phản biện
+                              ${s.phanBien}`;
+
+  if(fileNum===3) {
+    const nguoi = state.roles.includes('Thư ký') ? s.thuKy : s.chuTich;
+    return `PHIẾU ĐÁNH GIÁ – NHẬN XÉT ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+================================================================================
+
+Tên đề cương: ${s.mon}
+Tác giả: ${s.gvViet}
+Người nhận xét: ${nguoi}
+Nơi công tác: Trường Đại học Đồng Nai – Khoa Ngoại Ngữ
+
+NỘI DUNG NHẬN XÉT:
+
+1. Về hình thức trình bày:
+${f.f3_hinh_thuc||''}
+
+2. Về cấu trúc của đề cương:
+${f.f3_cau_truc||''}
+
+3. Về hình thức dạy học và kiểm tra đánh giá:
+${f.f3_day_hoc||''}
+
+4. Đề xuất góp ý:
+${f.f3_gop_y||''}
+
+5. Kết quả đánh giá: ${f.f3_ket_qua==='dong_y'?'[X] Đồng ý nghiệm thu     [ ] Không đồng ý nghiệm thu':'[ ] Đồng ý nghiệm thu     [X] Không đồng ý nghiệm thu'}
+
+                              Đồng Nai, ngày ${s.ngay}
+                              ${nguoi}`;
+  }
+
+  if(fileNum===4) {
+    const nguoi = state.roles.includes('Phản biện') ? s.phanBien
+      : state.roles.includes('Chủ tịch hội đồng') ? s.chuTich : s.thuKy;
+    const total = sc.reduce((a,b)=>a+b,0);
+    const scoreLines = CRITERIA.map((c,i)=>
+      `  ${c.tc.padEnd(30,' ')} (tối đa ${String(c.max).padStart(2,' ')}):  ${sc[i]}`
+    ).join('\n');
+    return `PHIẾU ĐÁNH GIÁ NGHIỆM THU ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+(Dành cho các thành viên trong Hội đồng thẩm định)
+================================================================================
+
+Tên học phần: ${s.mon}
+Tác giả: ${s.gvViet}
+Người đánh giá: ${nguoi}
+Ngày: ${s.ngay}
+
+TIÊU CHÍ ĐÁNH GIÁ:
+${scoreLines}
+
+TỔNG ĐIỂM: ${total} / 100
+${total>=80?'=> ĐẠT yêu cầu phê duyệt':'=> CHƯA ĐẠT yêu cầu phê duyệt (cần ≥ 80 điểm)'}
+
+Nhận xét chung:
+${f.f4_nhan_xet||''}
+
+                              Đồng Nai, ngày ${s.ngay}
+                              Người đánh giá
+                              ${nguoi}`;
+  }
+  return '';
+}
+
+// ============================================================
+// SUBMIT
+// ============================================================
+async function handleSubmit() {
+  const errEl = document.getElementById('form-error');
+  errEl.style.display = 'none';
+
+  showLoading('Đang tạo hồ sơ...', 'Vui lòng chờ trong giây lát');
+
+  const docs = state.filesNeeded.map(fn => ({
+    fileNum: fn,
+    content: buildDoc(fn),
+    filename: `${state.session.mon.replace(/[\/\\?%*:|"<>]/g,'-')}_File${fn}.txt`,
+  }));
+
+  const payload = {
+    action: 'submitHoSo',
+    gv: state.gv,
+    session: state.session,
+    roles: state.roles,
+    filesNeeded: state.filesNeeded,
+    formData: state.formData,
+    scores: state.scores,
+    docs: docs.map(d => ({fileNum: d.fileNum, filename: d.filename, content: btoa(unescape(encodeURIComponent(d.content)))})),
+    submittedAt: new Date().toISOString(),
+  };
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    hideLoading();
+
+    if(data.success) {
+      renderResults(docs, data.driveLinks || {});
+      goToStep(4);
+    } else {
+      throw new Error(data.error || 'GAS trả về lỗi không xác định');
+    }
+  } catch(e) {
+    hideLoading();
+    document.getElementById('form-error-text').textContent = 'Lỗi kết nối: ' + e.message + '. Hãy thử lại hoặc liên hệ admin.';
+    errEl.style.display = 'flex';
+  }
+}
+
+function renderResults(docs, driveLinks) {
+  const s = state.session;
+  document.getElementById('result-summary-text').textContent =
+    `${s.mon} · ${s.ngay} · ${s.gio} · Phòng ${s.phong} · Vai trò: ${state.roles.join(', ')}`;
+
+  document.getElementById('result-files').innerHTML = docs.map(d=>{
+    const m = FILE_META[d.fileNum];
+    const link = driveLinks[d.fileNum];
+    return `<div class="result-file">
+      <div class="rf-header">
+        <div class="file-num-badge" style="background:${m.bg};color:${m.color};width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${m.icon}</div>
+        <div>
+          <div class="rf-title">File ${d.fileNum}: ${m.name}</div>
+          <div class="rf-sub">${d.filename}</div>
+        </div>
+        <span class="upload-status ${link?'us-done':'us-error'}" style="margin-left:auto">
+          ${link?'✅ Đã lên Drive':'⚠️ Chưa lên Drive'}
+        </span>
+      </div>
+      <div class="rf-actions">
+        <button class="btn btn-secondary" style="flex:1;font-size:13px" onclick="downloadFile('${d.filename}', ${d.fileNum})">⬇️ Tải về máy</button>
+        ${link?`<a class="btn btn-success" style="flex:1;font-size:13px;text-decoration:none;justify-content:center;display:inline-flex;align-items:center;gap:8px" href="${link}" target="_blank">☁️ Xem trên Drive</a>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Save docs for download
+let _lastDocs = [];
+async function handleSubmit() {
+  const errEl = document.getElementById('form-error');
+  errEl.style.display = 'none';
+  showLoading('Đang tạo hồ sơ...', 'Hệ thống đang xử lý và lưu lên Drive');
+
+  _lastDocs = state.filesNeeded.map(fn => ({
+    fileNum: fn,
+    content: buildDoc(fn),
+    filename: `${state.session.mon.replace(/[\/\\?%*:|"<>]/g,'-')}_File${fn}.txt`,
+  }));
+
+  const payload = {
+    action: 'submitHoSo',
+    gv: state.gv,
+    session: state.session,
+    roles: state.roles,
+    filesNeeded: state.filesNeeded,
+    formData: state.formData,
+    scores: state.scores,
+    docs: _lastDocs.map(d=>({
+      fileNum: d.fileNum,
+      filename: d.filename,
+      content: btoa(unescape(encodeURIComponent(d.content)))
+    })),
+    submittedAt: new Date().toISOString(),
+  };
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    hideLoading();
+    if(data.success) {
+      renderResults(_lastDocs, data.driveLinks || {});
+      goToStep(4);
+    } else {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+  } catch(e) {
+    hideLoading();
+    document.getElementById('form-error-text').textContent = 'Lỗi: ' + e.message;
+    errEl.style.display = 'flex';
+  }
+}
+
+function downloadFile(filename, fileNum) {
+  const doc = _lastDocs.find(d=>d.fileNum===fileNum);
+  if(!doc) return;
+  const blob = new Blob(['\uFEFF'+doc.content], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function showLoading(title, sub) {
+  document.getElementById('loading-title').textContent = title;
+  document.getElementById('loading-sub').textContent = sub;
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('show');
+}
+function resetAll() {
+  state = {gv:null,session:null,roles:[],filesNeeded:[],formData:{},scores:Array(18).fill(0),currentStep:1};
+  _lastDocs = [];
+  document.getElementById('dd-gv-display').innerHTML = '<span class="placeholder">Gõ tên để tìm nhanh...</span>';
+  document.getElementById('gv-selected-info').style.display = 'none';
+  document.getElementById('btn-step2').disabled = true;
+  document.getElementById('dd-gv-search').value = '';
+  filterDD('gv','');
+  goToStep(1);
+}
+
+// Init
+init();
+</script>
+</body>
+</html>

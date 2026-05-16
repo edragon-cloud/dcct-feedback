@@ -414,6 +414,28 @@
       display: flex; align-items: center; gap: 6px;
     }
     .header-upload-btn:hover { background: rgba(255,255,255,0.25); }
+
+    /* per-file upload slot */
+    .sig-slot {
+      border: 1.5px solid var(--border); border-radius: 10px;
+      margin-bottom: 14px; overflow: hidden;
+    }
+    .sig-slot-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .sig-slot-header .slot-icon { font-size: 18px; }
+    .sig-slot-header .slot-name { font-size: 15px; font-weight: 600; flex: 1; }
+    .sig-slot-header .slot-status {
+      font-size: 13px; font-weight: 600; padding: 3px 10px;
+      border-radius: 20px; white-space: nowrap;
+    }
+    .slot-status.pending { background: #fef3c7; color: #92400e; }
+    .slot-status.done    { background: #dcfce7; color: #166534; }
+    .sig-slot-body { padding: 12px 16px; }
+    .sig-slot .drop-zone { padding: 20px 16px; }
+    .sig-slot .img-preview-grid { margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -643,21 +665,13 @@
             <h2>Upload ảnh hồ sơ có chữ ký</h2>
           </div>
           <div class="card-body">
-            <div class="field">
-              <label class="field-label">Ảnh hồ sơ <span class="req">*</span></label>
-              <div class="drop-zone" id="sig-drop-zone"
-                ondragover="sigDragOver(event)" ondragleave="sigDragLeave(event)" ondrop="sigDrop(event)">
-                <input type="file" id="sig-file-input" accept="image/*" multiple
-                  onchange="sigFilesSelected(this.files)" />
-                <div class="dz-icon">📷</div>
-                <div class="dz-label">Chụp hoặc chọn ảnh</div>
-                <div class="dz-sub">Có thể chọn nhiều ảnh · JPG, PNG · Mỗi ảnh = 1 trang PDF</div>
-              </div>
-              <div id="sig-preview-grid" class="img-preview-grid"></div>
-              <p class="field-hint" id="sig-count-hint" style="margin-top:8px;display:none"></p>
-            </div>
+            <p style="font-size:15px;color:var(--text-secondary);margin-bottom:16px">
+              Mỗi loại hồ sơ cần upload riêng. Chụp ảnh từng trang rồi upload cho đúng loại.
+            </p>
+            <!-- Per-file upload zones — render dynamically -->
+            <div id="sig-file-slots"></div>
 
-            <div id="sig-upload-prog" class="upload-prog" style="display:none">
+            <div id="sig-upload-prog" class="upload-prog" style="display:none;margin-top:12px">
               <div style="font-size:15px;color:var(--text-secondary)" id="sig-prog-label">Đang xử lý...</div>
               <div class="upload-prog-bar"><div class="upload-prog-fill" id="sig-prog-fill"></div></div>
             </div>
@@ -700,7 +714,7 @@
 // ============================================================
 // CONFIG — SỬA URL NÀY SAU KHI DEPLOY GAS
 // ============================================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycby-DQCbD-hINwcytcsy7yaq9ldiIuIQA9T2r3oxLD9wB2aGOd3O7L74UWFGgnSBZ5-n/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwThTfGReHHS7LhFXY5TEOM79GbeL9SohsHHfGUgxv2dktxnlXn9Voq89flRDFIOKSx/exec";
 
 // ============================================================
 // DATA
@@ -1510,17 +1524,24 @@ function resetAll() {
 // SIGNATURE UPLOAD — Screen 5
 // ============================================================
 const SIG_FOLDER_ID = "14LAntafqmYC6PJMUoOnVUgfujoTwZdwQ";
-const ROLE_FILE_LABEL = {
-  "Chủ tịch hội đồng": "Chủ tịch",
-  "Phản biện":          "Phản biện",
-  "Thư ký":             "Thư ký",
-};
 
-let sigState = { gv: null, session: null, roles: [], images: [] };
+// File labels — khớp với GAS FILE_LABELS
+const SIG_FILE_LABELS = {1:"Biên bản", 2:"Nhận xét phản biện", 3:"Phiếu đánh giá", 4:"Phiếu nghiệm thu"};
+const SIG_ROLE_SHORT  = {"Chủ tịch hội đồng":"Chủ tịch", "Phản biện":"Phản biện", "Thư ký":"Thư ký"};
+
+function sigRoleNeedsFile(role, fileNum) {
+  if (role === "Thư ký")            return [1,3,4].includes(fileNum);
+  if (role === "Phản biện")         return [2,4].includes(fileNum);
+  if (role === "Chủ tịch hội đồng") return [3,4].includes(fileNum);
+  return false;
+}
+
+// sigState.slots = [{ filename, fileNum, role, images:[], done:false }, ...]
+let sigState = { gv: null, session: null, roles: [], slots: [] };
 
 // ── Open / close ──────────────────────────────────────────────
 function openUploadScreen() {
-  sigState = { gv: null, session: null, roles: [], images: [] };
+  sigState = { gv: null, session: null, roles: [], slots: [] };
   renderSigGVDropdown();
   document.getElementById('dd-sig-gv-display').innerHTML = '<span class="placeholder">Gõ tên để tìm nhanh...</span>';
   document.getElementById('dd-sig-gv-search').value = '';
@@ -1548,8 +1569,8 @@ function sigShowStepA() {
 
 function sigBackToA() {
   sigState.session = null;
-  sigState.roles = [];
-  sigState.images = [];
+  sigState.roles   = [];
+  sigState.slots   = [];
   resetSigUploadBlock();
   document.getElementById('btn-sig-submit').disabled = true;
   sigShowStepA();
@@ -1584,7 +1605,7 @@ function sigShowSessions() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── Session list (clone of renderSessions) ────────────────────
+// ── Session list ──────────────────────────────────────────────
 const SIG_DAY_NAMES = {'19/05/2026':'Thứ Ba, 19/05/2026','20/05/2026':'Thứ Tư, 20/05/2026','21/05/2026':'Thứ Năm, 21/05/2026'};
 
 function renderSigSessions() {
@@ -1621,85 +1642,134 @@ function renderSigSessions() {
 function selectSigSession(tt) {
   const row = SCHEDULE.find(s => s.tt === tt);
   sigState.session = row;
-  sigState.roles = getRoles(sigState.gv, row);
-  sigState.images = [];
+  sigState.roles   = getRoles(sigState.gv, row);
 
-  // Highlight selected card
+  // Build slots: 1 slot per (role × fileNum) pair the GV needs to sign
+  sigState.slots = [];
+  const safe = row.mon.replace(/[\/\\?%*:|"<>]/g, '-').trim();
+  sigState.roles.forEach(role => {
+    const rs = SIG_ROLE_SHORT[role] || role;
+    [1,2,3,4].forEach(fileNum => {
+      if (!sigRoleNeedsFile(role, fileNum)) return;
+      sigState.slots.push({
+        key: `${fileNum}_${rs}`,
+        fileNum,
+        role,
+        // Tên PDF = tên docx đổi đuôi — khớp hoàn toàn
+        filename: `${safe}_${SIG_FILE_LABELS[fileNum]}_${rs}.pdf`,
+        label: `${SIG_FILE_LABELS[fileNum]} — ${rs}`,
+        images: [],
+        done: false,
+      });
+    });
+  });
+
+  // Highlight card
   document.querySelectorAll('#sig-sessions-list .session-card').forEach(c => c.classList.remove('selected'));
   document.getElementById(`sigsc-${tt}`)?.classList.add('selected');
 
   // Session summary
-  const roles = sigState.roles;
   document.getElementById('sig-session-summary').innerHTML = `
     <strong>${row.mon}</strong> · ${row.ngay} · ${row.gio} · Phòng ${row.phong}<br>
     <span style="font-size:14px;color:var(--text-secondary)">GV viết: ${row.gvViet}</span>
-    ${roles.length ? ' · <span style="font-size:14px">' + roles.map(roleBadge).join(' ') + '</span>' : ''}
+    ${sigState.roles.length ? ' · ' + sigState.roles.map(roleBadge).join(' ') : ''}
   `;
 
-  // Reset upload block
   resetSigUploadBlock();
+  renderSigSlots();
   document.getElementById('sig-upload-block').style.display = 'block';
-  document.getElementById('btn-sig-submit').disabled = true;
+  checkSigReady();
 
-  // Scroll to upload block
-  setTimeout(() => document.getElementById('sig-upload-block').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  setTimeout(() => document.getElementById('sig-upload-block').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+function renderSigSlots() {
+  const container = document.getElementById('sig-file-slots');
+  container.innerHTML = sigState.slots.map((slot, idx) => `
+    <div class="sig-slot" id="slot-${idx}">
+      <div class="sig-slot-header">
+        <span class="slot-icon">📄</span>
+        <span class="slot-name">${slot.label}</span>
+        <span class="slot-status ${slot.done ? 'done' : 'pending'}" id="slot-status-${idx}">
+          ${slot.done ? '✅ Đã upload' : '⏳ Chưa upload'}
+        </span>
+      </div>
+      <div class="sig-slot-body">
+        <div class="field-hint" style="margin-bottom:8px;font-size:13px">
+          Tên file sẽ lưu: <code style="background:var(--bg-secondary);padding:2px 6px;border-radius:4px;font-size:12px">${slot.filename}</code>
+        </div>
+        <div class="drop-zone" id="dz-${idx}"
+          ondragover="slotDragOver(event,${idx})" ondragleave="slotDragLeave(event,${idx})" ondrop="slotDrop(event,${idx})">
+          <input type="file" id="slot-input-${idx}" accept="image/*" multiple
+            onchange="slotFilesSelected(this.files, ${idx})" />
+          <div class="dz-icon">📷</div>
+          <div class="dz-label">Chụp hoặc chọn ảnh</div>
+          <div class="dz-sub">Nhiều ảnh → nhiều trang PDF</div>
+        </div>
+        <div id="slot-preview-${idx}" class="img-preview-grid"></div>
+      </div>
+    </div>
+  `).join('');
 }
 
 function resetSigUploadBlock() {
-  document.getElementById('sig-upload-block') && (document.getElementById('sig-upload-block').style.display = 'none');
-  document.getElementById('sig-preview-grid').innerHTML = '';
-  document.getElementById('sig-count-hint').style.display = 'none';
-  document.getElementById('sig-file-input').value = '';
+  const block = document.getElementById('sig-upload-block');
+  if (block) block.style.display = 'none';
+  document.getElementById('sig-file-slots').innerHTML = '';
   document.getElementById('sig-error').style.display = 'none';
   document.getElementById('sig-success').style.display = 'none';
   document.getElementById('sig-upload-prog').style.display = 'none';
 }
 
-// ── Drag & drop / file select ─────────────────────────────────
-function sigDragOver(e) { e.preventDefault(); document.getElementById('sig-drop-zone').classList.add('drag-over'); }
-function sigDragLeave(e) { document.getElementById('sig-drop-zone').classList.remove('drag-over'); }
-function sigDrop(e) {
+// ── Per-slot drag & drop ──────────────────────────────────────
+function slotDragOver(e, idx)  { e.preventDefault(); document.getElementById(`dz-${idx}`).classList.add('drag-over'); }
+function slotDragLeave(e, idx) { document.getElementById(`dz-${idx}`).classList.remove('drag-over'); }
+function slotDrop(e, idx) {
   e.preventDefault();
-  document.getElementById('sig-drop-zone').classList.remove('drag-over');
-  sigFilesSelected(e.dataTransfer.files);
+  document.getElementById(`dz-${idx}`).classList.remove('drag-over');
+  slotFilesSelected(e.dataTransfer.files, idx);
 }
 
-function sigFilesSelected(files) {
+function slotFilesSelected(files, idx) {
   const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
   if (!arr.length) return;
   let loaded = 0;
   arr.forEach(file => {
     const reader = new FileReader();
     reader.onload = e => {
-      sigState.images.push({ dataUrl: e.target.result, name: file.name });
+      sigState.slots[idx].images.push({ dataUrl: e.target.result });
       loaded++;
-      if (loaded === arr.length) renderSigPreviews();
+      if (loaded === arr.length) renderSlotPreview(idx);
     };
     reader.readAsDataURL(file);
   });
 }
 
-function renderSigPreviews() {
-  const grid = document.getElementById('sig-preview-grid');
-  grid.innerHTML = sigState.images.map((img, i) => `
+function renderSlotPreview(idx) {
+  const slot = sigState.slots[idx];
+  const grid = document.getElementById(`slot-preview-${idx}`);
+  grid.innerHTML = slot.images.map((img, i) => `
     <div class="img-thumb">
       <img src="${img.dataUrl}" alt="Trang ${i+1}" />
-      <button class="thumb-del" onclick="sigRemoveImg(${i})">✕</button>
+      <button class="thumb-del" onclick="slotRemoveImg(${idx},${i})">✕</button>
       <div class="thumb-num">Trang ${i+1}</div>
     </div>
   `).join('');
-  const hint = document.getElementById('sig-count-hint');
-  hint.textContent = `${sigState.images.length} ảnh · sẽ tạo PDF ${sigState.images.length} trang`;
-  hint.style.display = 'block';
-  document.getElementById('btn-sig-submit').disabled = sigState.images.length === 0;
+  checkSigReady();
 }
 
-function sigRemoveImg(idx) {
-  sigState.images.splice(idx, 1);
-  renderSigPreviews();
+function slotRemoveImg(idx, imgIdx) {
+  sigState.slots[idx].images.splice(imgIdx, 1);
+  renderSlotPreview(idx);
 }
 
-// ── Submit ────────────────────────────────────────────────────
+function checkSigReady() {
+  // Enable submit nếu ít nhất 1 slot có ảnh
+  const anyReady = sigState.slots.some(s => s.images.length > 0);
+  document.getElementById('btn-sig-submit').disabled = !anyReady;
+}
+
+// ── Submit — lần lượt từng slot ───────────────────────────────
 async function submitSignaturePDF() {
   document.getElementById('sig-error').style.display = 'none';
   document.getElementById('sig-success').style.display = 'none';
@@ -1709,73 +1779,74 @@ async function submitSignaturePDF() {
   progWrap.style.display = 'block';
   document.getElementById('btn-sig-submit').disabled = true;
 
+  const slotsToUpload = sigState.slots.filter(s => s.images.length > 0 && !s.done);
+  const total = slotsToUpload.length;
+  let uploaded = 0;
+  const errors = [];
+
   try {
-    progLabel.textContent = 'Đang tạo file PDF...';
-    progFill.style.width = '15%';
-
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const A4_W = 210, A4_H = 297;
 
-    for (let i = 0; i < sigState.images.length; i++) {
-      progLabel.textContent = `Đang xử lý ảnh ${i+1}/${sigState.images.length}...`;
-      progFill.style.width = `${15 + (i / sigState.images.length) * 50}%`;
-      if (i > 0) pdf.addPage();
-      await new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => {
-          const ratio = Math.min(A4_W / img.naturalWidth, A4_H / img.naturalHeight);
-          const w = img.naturalWidth * ratio, h = img.naturalHeight * ratio;
-          const x = (A4_W - w) / 2, y = (A4_H - h) / 2;
-          const fmt = sigState.images[i].dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
-          pdf.addImage(sigState.images[i].dataUrl, fmt, x, y, w, h);
-          resolve();
-        };
-        img.src = sigState.images[i].dataUrl;
+    for (const slot of slotsToUpload) {
+      progLabel.textContent = `Đang tạo PDF: ${slot.label} (${uploaded+1}/${total})...`;
+      progFill.style.width = `${(uploaded / total) * 90}%`;
+
+      // Build PDF cho slot này
+      const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      const A4_W = 210, A4_H = 297;
+      for (let i = 0; i < slot.images.length; i++) {
+        if (i > 0) pdf.addPage();
+        await new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            const ratio = Math.min(A4_W / img.naturalWidth, A4_H / img.naturalHeight);
+            const w = img.naturalWidth * ratio, h = img.naturalHeight * ratio;
+            const fmt = slot.images[i].dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
+            pdf.addImage(slot.images[i].dataUrl, fmt, (A4_W-w)/2, (A4_H-h)/2, w, h);
+            resolve();
+          };
+          img.src = slot.images[i].dataUrl;
+        });
+      }
+
+      progLabel.textContent = `Đang upload: ${slot.filename}...`;
+      const pdfBase64 = pdf.output('datauristring').split(',')[1];
+      const res = await fetch(GAS_URL, {
+        method: 'POST', mode: 'cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'uploadSignedPDF',
+          gv: sigState.gv,
+          mon: sigState.session.mon,
+          filename: slot.filename,
+          pdfBase64,
+          folderIdSigned: SIG_FOLDER_ID,
+        }),
       });
+      const data = await res.json();
+      if (data.success) {
+        slot.done = true;
+        // Update status badge
+        const statusEl = document.getElementById(`slot-status-${sigState.slots.indexOf(slot)}`);
+        if (statusEl) { statusEl.textContent = '✅ Đã upload'; statusEl.className = 'slot-status done'; }
+        uploaded++;
+      } else {
+        errors.push(`${slot.label}: ${data.error || 'lỗi không xác định'}`);
+      }
     }
 
-    progLabel.textContent = 'Đang gửi lên Google Drive...';
-    progFill.style.width = '75%';
-
-    const pdfBase64 = pdf.output('datauristring').split(',')[1];
-    const s = sigState.session;
-    const safe = s.mon.replace(/[\/\\?%*:|"<>]/g, '-').trim();
-    // Tên file: {Môn}_Hồ sơ chữ ký_{Vai trò}.pdf  — giống pattern docx
-    const roleShort = sigState.roles.length
-      ? sigState.roles.map(r => ROLE_FILE_LABEL[r] || r).join('-')
-      : sigState.gv;
-    const filename = `${safe}_Hồ sơ chữ ký_${roleShort}.pdf`;
-
-    const payload = {
-      action: 'uploadSignedPDF',
-      gv: sigState.gv,
-      mon: s.mon,
-      filename,
-      pdfBase64,
-      folderIdSigned: SIG_FOLDER_ID,
-    };
-
-    const res = await fetch(GAS_URL, {
-      method: 'POST', mode: 'cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
     progFill.style.width = '100%';
+    progWrap.style.display = 'none';
 
-    if (data.success) {
-      progWrap.style.display = 'none';
+    if (errors.length === 0) {
       document.getElementById('sig-success-text').textContent =
-        `File "${filename}" đã lưu vào thư mục "${s.mon}" trên Google Drive.`;
+        `Đã nộp thành công ${uploaded} file PDF vào thư mục "${sigState.session.mon}" trên Google Drive.`;
       document.getElementById('sig-success').style.display = 'flex';
-      sigState.images = [];
-      document.getElementById('sig-preview-grid').innerHTML = '';
-      document.getElementById('sig-count-hint').style.display = 'none';
-      document.getElementById('sig-file-input').value = '';
-      document.getElementById('btn-sig-submit').disabled = true;
     } else {
-      throw new Error(data.error || 'Lỗi không xác định từ GAS');
+      document.getElementById('sig-error-text').innerHTML =
+        `${uploaded} file thành công. Lỗi:<br>` + errors.map(e => `• ${e}`).join('<br>');
+      document.getElementById('sig-error').style.display = 'flex';
+      document.getElementById('btn-sig-submit').disabled = false;
     }
   } catch (err) {
     progWrap.style.display = 'none';
@@ -1784,6 +1855,11 @@ async function submitSignaturePDF() {
     document.getElementById('btn-sig-submit').disabled = false;
   }
 }
+
+// kept for legacy drag-drop on old drop-zone id (no-op now)
+function sigDragOver(e)  { e.preventDefault(); }
+function sigDragLeave(e) {}
+function sigDrop(e)      { e.preventDefault(); }
 
 
 // Init

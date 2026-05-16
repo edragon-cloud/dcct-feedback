@@ -439,7 +439,7 @@
     </div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goToStep(1)">← Quay lại</button>
-      <button class="btn btn-primary" style="margin-left:auto" onclick="goToStep3()" id="btn-step3" disabled>
+      <button class="btn btn-primary" style="margin-left:auto" onclick="goToStep3WithResubmitCheck()" id="btn-step3" disabled>
         Tiếp theo →
       </button>
     </div>
@@ -450,6 +450,15 @@
     <div id="session-summary-card" class="card" style="border-left: 4px solid var(--navy)">
       <div class="card-body" style="padding: 14px 20px;">
         <div id="session-summary"></div>
+      </div>
+    </div>
+
+    <!-- Resubmit banner -->
+    <div id="resubmit-banner" style="display:none;background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:12px 16px;margin-bottom:14px;gap:10px;align-items:flex-start">
+      <span style="font-size:20px;flex-shrink:0">🔄</span>
+      <div>
+        <strong style="color:#854d0e;font-size:14px">Bạn đang nộp lại</strong><br>
+        <span id="resubmit-info" style="font-size:13px;color:#92400e"></span>
       </div>
     </div>
 
@@ -483,8 +492,11 @@
         Hồ sơ đã được lưu lên Google Drive và ghi vào bảng theo dõi của bộ môn. Nếu cần hỗ trợ, liên hệ Th.S Dương Thanh Tú.
       </div>
     </div>
-    <button class="btn btn-secondary btn-full" onclick="resetAll()" style="margin-top: 12px;">
-      🔄 Nộp hồ sơ cho môn khác
+    <button class="btn btn-secondary btn-full" onclick="goBackAndResubmit()" style="margin-top: 8px; border-color: #f59e0b; color: #92400e;">
+      🔄 Chỉnh sửa & Nộp lại
+    </button>
+    <button class="btn btn-secondary btn-full" onclick="resetAll()" style="margin-top: 8px;">
+      ➕ Nộp hồ sơ cho môn khác
     </button>
   </div>
 
@@ -503,57 +515,60 @@
 // ============================================================
 // CONFIG — SỬA URL NÀY SAU KHI DEPLOY GAS
 // ============================================================
-const GAS_URL = "YOUR_GAS_WEB_APP_URL_HERE";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwThTfGReHHS7LhFXY5TEOM79GbeL9SohsHHfGUgxv2dktxnlXn9Voq89flRDFIOKSx/exec";
 
 // ============================================================
 // DATA
 // ============================================================
 const SCHEDULE = [
-  {tt:1, mon:"Nghe 1", gvViet:"Nguyễn Tiến Hân", ngay:"11/05/2026", gio:"07:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:2, mon:"Nghe 2", gvViet:"Nguyễn Tiến Hân", ngay:"11/05/2026", gio:"08:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:3, mon:"Nghe 3", gvViet:"Bùi Công Nguyên Phong", ngay:"11/05/2026", gio:"09:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:4, mon:"Nghe 4", gvViet:"Bùi Công Nguyên Phong", ngay:"11/05/2026", gio:"10:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:5, mon:"Nghe 5", gvViet:"Nguyễn Thị Hà Phương", ngay:"11/05/2026", gio:"13:30", phong:"D103", chuTich:"Dương Thanh Tú", phanBien:"Bùi Công Nguyên Phong", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:6, mon:"Nói 1", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"11/05/2026", gio:"14:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
-  {tt:7, mon:"Nói 2", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"11/05/2026", gio:"15:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
-  {tt:8, mon:"Nói 3", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"12/05/2026", gio:"07:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
-  {tt:9, mon:"Nói 4", gvViet:"Dương Thanh Tú", ngay:"12/05/2026", gio:"08:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Nhâm Thị Thu Nga"},
-  {tt:10, mon:"Nói 5", gvViet:"Dương Thanh Tú", ngay:"12/05/2026", gio:"09:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Nhâm Thị Thu Nga"},
-  {tt:11, mon:"Đọc 1", gvViet:"Nhâm Thị Thu Nga", ngay:"11/05/2026", gio:"07:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Lê Tiến", thuKy:"Đỗ Thị Khắc Bình"},
-  {tt:12, mon:"Đọc 2", gvViet:"Nhâm Thị Thu Nga", ngay:"11/05/2026", gio:"08:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Lê Tiến", thuKy:"Đỗ Thị Khắc Bình"},
-  {tt:13, mon:"Đọc 3", gvViet:"Trần Văn Tuấn", ngay:"11/05/2026", gio:"09:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
-  {tt:14, mon:"Đọc 4", gvViet:"Trần Văn Tuấn", ngay:"11/05/2026", gio:"10:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
-  {tt:15, mon:"Đọc 5", gvViet:"Lê Tiến", ngay:"11/05/2026", gio:"13:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
-  {tt:16, mon:"Viết 1", gvViet:"Mai Thị Lan Anh", ngay:"11/05/2026", gio:"14:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Ngô Ngọc Thụy", thuKy:"Đỗ Thị Khắc Bình"},
-  {tt:17, mon:"Viết 2", gvViet:"Mai Thị Lan Anh", ngay:"11/05/2026", gio:"15:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Ngô Ngọc Thụy", thuKy:"Trần Văn Tuấn"},
-  {tt:18, mon:"Viết 3", gvViet:"Ngô Ngọc Thụy", ngay:"12/05/2026", gio:"07:30", phong:"D104", chuTich:"Nguyễn Tiến Hân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
-  {tt:19, mon:"Viết 4", gvViet:"Lê Tiến", ngay:"12/05/2026", gio:"08:30", phong:"D104", chuTich:"Nguyễn Tiến Hân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
-  {tt:20, mon:"Viết 5", gvViet:"Nguyễn Tiến Hân", ngay:"12/05/2026", gio:"09:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
-  {tt:21, mon:"Ngữ âm thực hành", gvViet:"Vũ Thu Hà", ngay:"12/05/2026", gio:"10:30", phong:"D103", chuTich:"Ngô Ngọc Thụy", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Bùi Công Nguyên Phong"},
-  {tt:22, mon:"Ngữ pháp Tiếng Anh 1", gvViet:"Đặng Thị Tuyết Nhung", ngay:"12/05/2026", gio:"13:30", phong:"D103", chuTich:"Nguyễn Thị Nguyệt Hà", phanBien:"Nhâm Thị Thu Nga", thuKy:"Bùi Công Nguyên Phong"},
-  {tt:23, mon:"Ngữ pháp Tiếng Anh 2", gvViet:"Đặng Thị Tuyết Nhung", ngay:"12/05/2026", gio:"14:30", phong:"D103", chuTich:"Nguyễn Thị Nguyệt Hà", phanBien:"Nhâm Thị Thu Nga", thuKy:"Bùi Công Nguyên Phong"},
-  {tt:24, mon:"Âm vị học", gvViet:"Bùi Công Nguyên Phong", ngay:"12/05/2026", gio:"15:30", phong:"D103", chuTich:"Ngô Ngọc Thụy", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:25, mon:"Ngữ nghĩa học", gvViet:"Ngô Ngọc Thụy", ngay:"11/05/2026", gio:"07:30", phong:"D105", chuTich:"Bùi Công Nguyên Phong", phanBien:"Trương Phi Luân", thuKy:"Bùi Hồng Hà"},
-  {tt:26, mon:"Hình thái - Cú pháp", gvViet:"Bùi Hồng Hà", ngay:"11/05/2026", gio:"08:30", phong:"D105", chuTich:"Ngô Ngọc Thụy", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Văn Nam"},
-  {tt:27, mon:"Văn hóa Anh-Mỹ", gvViet:"Nguyễn Lưu Như Quỳnh", ngay:"12/05/2026", gio:"10:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Văn Nam"},
-  {tt:28, mon:"Phương pháp nghiên cứu khoa học", gvViet:"Trương Phi Luân", ngay:"12/05/2026", gio:"13:30", phong:"D104", chuTich:"Dương Thanh Tú", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
-  {tt:29, mon:"Kỹ năng thuyết trình", gvViet:"Dương Thanh Tú", ngay:"13/05/2026", gio:"07:30", phong:"D103", chuTich:"Bùi Công Nguyên Phong", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
-  {tt:30, mon:"Dịch Anh-Việt", gvViet:"Trương Phi Luân", ngay:"12/05/2026", gio:"14:30", phong:"D104", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
-  {tt:31, mon:"Dịch Việt-Anh", gvViet:"Trương Phi Luân", ngay:"13/05/2026", gio:"08:30", phong:"D103", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
-  {tt:32, mon:"Công nghệ trong giảng dạy", gvViet:"Dương Thanh Tú", ngay:"13/05/2026", gio:"09:30", phong:"D103", chuTich:"Nguyễn Văn Nam", phanBien:"Nguyễn Tiến Hân", thuKy:"Bùi Công Nguyên Phong"},
-  {tt:33, mon:"Tiếng Anh toàn cầu", gvViet:"Trương Phi Luân", ngay:"13/05/2026", gio:"10:30", phong:"D103", chuTich:"Nguyễn Văn Nam", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Nhâm Thị Thu Nga"},
-  {tt:34, mon:"PPDH Tiếng Anh cho trẻ em", gvViet:"Bùi Hồng Hà", ngay:"13/05/2026", gio:"07:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Nguyễn Thị Hà Phương", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:35, mon:"Cơ sở lý luận dạy và học ngôn ngữ", gvViet:"Vũ Thu Hà", ngay:"13/05/2026", gio:"08:30", phong:"D104", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Bùi Hồng Hà", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:36, mon:"Thực hành dạy học tại trường sư phạm", gvViet:"Nguyễn Thị Hà Phương", ngay:"13/05/2026", gio:"09:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Bùi Hồng Hà", thuKy:"Nguyễn Thị Nguyệt Hà"},
-  {tt:37, mon:"Phương pháp giảng dạy tiếng Anh 1", gvViet:"Bùi Hồng Hà", ngay:"11/05/2026", gio:"14:30", phong:"D105", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Trần Văn Tuấn", thuKy:"Vũ Thu Hà"},
-  {tt:38, mon:"Phương pháp giảng dạy tiếng Anh 2", gvViet:"Bùi Hồng Hà", ngay:"12/05/2026", gio:"13:30", phong:"D105", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Trần Văn Tuấn", thuKy:"Vũ Thu Hà"},
-  {tt:39, mon:"Kiểm tra đánh giá trong dạy tiếng Anh", gvViet:"Mai Thị Lan Anh", ngay:"12/05/2026", gio:"14:30", phong:"D105", chuTich:"Bùi Hồng Hà", phanBien:"Nguyễn Thị Hà Phương", thuKy:"Vũ Thu Hà"},
-  {tt:40, mon:"Rèn luyện NVSP", gvViet:"Nguyễn Thị Hà Phương", ngay:"12/05/2026", gio:"15:30", phong:"D104", chuTich:"Mai Thị Lan Anh", phanBien:"Bùi Hồng Hà", thuKy:"Vũ Thu Hà"},
-  {tt:41, mon:"Giao Thoa Văn Hóa", gvViet:"Bùi Hồng Hà", ngay:"13/05/2026", gio:"13:30", phong:"D103", chuTich:"Trương Phi Luân", phanBien:"Dương Thanh Tú", thuKy:"Vũ Thu Hà"},
-  {tt:42, mon:"Bình Đẳng Giới và Hòa Nhập Xã Hội", gvViet:"Dương Thanh Tú", ngay:"13/05/2026", gio:"14:30", phong:"D103", chuTich:"Trương Phi Luân", phanBien:"Mai Thị Lan Anh", thuKy:"Nguyễn Văn Nam"},
-  {tt:43, mon:"Phân Tích diễn ngôn", gvViet:"Trương Phi Luân", ngay:"11/05/2026", gio:"09:30", phong:"D105", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Ngô Ngọc Thụy", thuKy:"Nguyễn Văn Nam"},
-  {tt:44, mon:"Văn Học Anh Mỹ", gvViet:"Nguyễn Lưu Như Quỳnh", ngay:"11/05/2026", gio:"10:30", phong:"D105", chuTich:"Trương Phi Luân", phanBien:"Nguyễn Văn Nam", thuKy:"Ngô Ngọc Thụy"},
-  {tt:45, mon:"Phát triển tài liệu giảng dạy", gvViet:"Nguyễn Thị Hà Phương", ngay:"13/05/2026", gio:"10:30", phong:"D104", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Bùi Hồng Hà", thuKy:"Ngô Ngọc Thụy"},
+  {tt:1,  mon:"Nghe 1", gvViet:"Nguyễn Tiến Hân", ngay:"19/05/2026", gio:"07:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:2,  mon:"Nghe 2", gvViet:"Nguyễn Tiến Hân", ngay:"19/05/2026", gio:"08:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:3,  mon:"Nghe 3", gvViet:"Bùi Công Nguyên Phong", ngay:"19/05/2026", gio:"09:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:4,  mon:"Nghe 4", gvViet:"Bùi Công Nguyên Phong", ngay:"19/05/2026", gio:"10:30", phong:"D103", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Dương Thanh Tú", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:5,  mon:"Nghe 5", gvViet:"Nguyễn Thị Hà Phương", ngay:"19/05/2026", gio:"13:30", phong:"D103", chuTich:"Dương Thanh Tú", phanBien:"Bùi Công Nguyên Phong", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:6,  mon:"Nói 1", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"19/05/2026", gio:"14:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
+  {tt:7,  mon:"Nói 2", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"19/05/2026", gio:"15:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
+  {tt:8,  mon:"Nói 3", gvViet:"Nguyễn Thị Nguyệt Hà", ngay:"20/05/2026", gio:"07:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Dương Thanh Tú"},
+  {tt:9,  mon:"Nói 4", gvViet:"Dương Thanh Tú", ngay:"20/05/2026", gio:"08:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Nhâm Thị Thu Nga"},
+  {tt:10, mon:"Nói 5", gvViet:"Dương Thanh Tú", ngay:"20/05/2026", gio:"09:30", phong:"D103", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Nhâm Thị Thu Nga"},
+  {tt:11, mon:"Đọc 1", gvViet:"Nhâm Thị Thu Nga", ngay:"19/05/2026", gio:"07:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Lê Tiến", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:12, mon:"Đọc 2", gvViet:"Nhâm Thị Thu Nga", ngay:"19/05/2026", gio:"08:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Lê Tiến", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:13, mon:"Đọc 3", gvViet:"Trần Văn Tuấn", ngay:"19/05/2026", gio:"09:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:14, mon:"Đọc 4", gvViet:"Trần Văn Tuấn", ngay:"19/05/2026", gio:"10:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:15, mon:"Đọc 5", gvViet:"Lê Tiến", ngay:"19/05/2026", gio:"13:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Nhâm Thị Thu Nga", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:16, mon:"Viết 1", gvViet:"Mai Thị Lan Anh", ngay:"19/05/2026", gio:"14:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Ngô Ngọc Thụy", thuKy:"Đỗ Thị Khắc Bình"},
+  {tt:17, mon:"Viết 2", gvViet:"Mai Thị Lan Anh", ngay:"19/05/2026", gio:"15:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Ngô Ngọc Thụy", thuKy:"Trần Văn Tuấn"},
+  {tt:18, mon:"Viết 3", gvViet:"Ngô Ngọc Thụy", ngay:"20/05/2026", gio:"07:30", phong:"D104", chuTich:"Nguyễn Tiến Hân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
+  {tt:19, mon:"Viết 4", gvViet:"Lê Tiến", ngay:"20/05/2026", gio:"08:30", phong:"D104", chuTich:"Nguyễn Tiến Hân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
+  {tt:20, mon:"Viết 5", gvViet:"Nguyễn Tiến Hân", ngay:"20/05/2026", gio:"09:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Mai Thị Lan Anh", thuKy:"Trần Văn Tuấn"},
+  {tt:21, mon:"Ngữ âm thực hành", gvViet:"Vũ Thu Hà", ngay:"20/05/2026", gio:"10:30", phong:"D103", chuTich:"Ngô Ngọc Thụy", phanBien:"Nguyễn Thị Nguyệt Hà", thuKy:"Bùi Công Nguyên Phong"},
+  {tt:22, mon:"Ngữ pháp Tiếng Anh 1", gvViet:"Đặng Thị Tuyết Nhung", ngay:"20/05/2026", gio:"13:30", phong:"D103", chuTich:"Nguyễn Thị Nguyệt Hà", phanBien:"Nhâm Thị Thu Nga", thuKy:"Bùi Công Nguyên Phong"},
+  {tt:23, mon:"Ngữ pháp Tiếng Anh 2", gvViet:"Đặng Thị Tuyết Nhung", ngay:"20/05/2026", gio:"14:30", phong:"D103", chuTich:"Nguyễn Thị Nguyệt Hà", phanBien:"Nhâm Thị Thu Nga", thuKy:"Bùi Công Nguyên Phong"},
+  {tt:24, mon:"Âm vị học", gvViet:"Bùi Công Nguyên Phong", ngay:"20/05/2026", gio:"15:30", phong:"D103", chuTich:"Ngô Ngọc Thụy", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:25, mon:"Ngữ nghĩa học", gvViet:"Ngô Ngọc Thụy", ngay:"19/05/2026", gio:"07:30", phong:"D105", chuTich:"Bùi Công Nguyên Phong", phanBien:"Trương Phi Luân", thuKy:"Bùi Hồng Hà"},
+  {tt:26, mon:"Hình thái - Cú pháp", gvViet:"Bùi Hồng Hà", ngay:"19/05/2026", gio:"08:30", phong:"D105", chuTich:"Ngô Ngọc Thụy", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Văn Nam"},
+  {tt:27, mon:"Văn hóa Anh-Mỹ", gvViet:"Nguyễn Lưu Như Quỳnh", ngay:"20/05/2026", gio:"10:30", phong:"D104", chuTich:"Lê Tiến", phanBien:"Trương Phi Luân", thuKy:"Nguyễn Văn Nam"},
+  {tt:28, mon:"Phương pháp nghiên cứu khoa học", gvViet:"Trương Phi Luân", ngay:"20/05/2026", gio:"13:30", phong:"D104", chuTich:"Dương Thanh Tú", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
+  {tt:29, mon:"Kỹ năng thuyết trình", gvViet:"Dương Thanh Tú", ngay:"21/05/2026", gio:"07:30", phong:"D103", chuTich:"Bùi Công Nguyên Phong", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
+  {tt:30, mon:"Dịch Anh-Việt", gvViet:"Trương Phi Luân", ngay:"20/05/2026", gio:"14:30", phong:"D104", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
+  {tt:31, mon:"Dịch Việt-Anh", gvViet:"Trương Phi Luân", ngay:"21/05/2026", gio:"08:30", phong:"D103", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Lê Tiến", thuKy:"Nguyễn Văn Nam"},
+  {tt:32, mon:"Công nghệ trong giảng dạy", gvViet:"Dương Thanh Tú", ngay:"21/05/2026", gio:"09:30", phong:"D103", chuTich:"Nguyễn Văn Nam", phanBien:"Nguyễn Tiến Hân", thuKy:"Bùi Công Nguyên Phong"},
+  {tt:33, mon:"Tiếng Anh toàn cầu", gvViet:"Trương Phi Luân", ngay:"21/05/2026", gio:"10:30", phong:"D103", chuTich:"Nguyễn Văn Nam", phanBien:"Nguyễn Lưu Như Quỳnh", thuKy:"Nhâm Thị Thu Nga"},
+  {tt:34, mon:"PPDH Tiếng Anh cho trẻ em", gvViet:"Bùi Hồng Hà", ngay:"21/05/2026", gio:"07:30", phong:"D104", chuTich:"Trần Văn Tuấn", phanBien:"Nguyễn Thị Hà Phương", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:35, mon:"Cơ sở lý luận dạy và học ngôn ngữ", gvViet:"Vũ Thu Hà", ngay:"21/05/2026", gio:"08:30", phong:"D104", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Bùi Hồng Hà", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:36, mon:"Thực hành dạy học tại trường sư phạm", gvViet:"Nguyễn Thị Hà Phương", ngay:"21/05/2026", gio:"09:30", phong:"D104", chuTich:"Trương Phi Luân", phanBien:"Bùi Hồng Hà", thuKy:"Nguyễn Thị Nguyệt Hà"},
+  {tt:37, mon:"Phương pháp giảng dạy tiếng Anh 1", gvViet:"Bùi Hồng Hà", ngay:"19/05/2026", gio:"14:30", phong:"D105", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Trần Văn Tuấn", thuKy:"Vũ Thu Hà"},
+  {tt:38, mon:"Phương pháp giảng dạy tiếng Anh 2", gvViet:"Bùi Hồng Hà", ngay:"20/05/2026", gio:"13:30", phong:"D105", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Trần Văn Tuấn", thuKy:"Vũ Thu Hà"},
+  {tt:39, mon:"Kiểm tra đánh giá trong dạy tiếng Anh", gvViet:"Mai Thị Lan Anh", ngay:"20/05/2026", gio:"14:30", phong:"D105", chuTich:"Bùi Hồng Hà", phanBien:"Nguyễn Thị Hà Phương", thuKy:"Vũ Thu Hà"},
+  {tt:40, mon:"Rèn luyện NVSP", gvViet:"Nguyễn Thị Hà Phương", ngay:"20/05/2026", gio:"15:30", phong:"D104", chuTich:"Mai Thị Lan Anh", phanBien:"Bùi Hồng Hà", thuKy:"Vũ Thu Hà"},
+  {tt:41, mon:"Giao Thoa Văn Hóa", gvViet:"Bùi Hồng Hà", ngay:"21/05/2026", gio:"13:30", phong:"D103", chuTich:"Trương Phi Luân", phanBien:"Dương Thanh Tú", thuKy:"Vũ Thu Hà"},
+  {tt:42, mon:"Bình Đẳng Giới và Hòa Nhập Xã Hội", gvViet:"Dương Thanh Tú", ngay:"21/05/2026", gio:"14:30", phong:"D103", chuTich:"Trương Phi Luân", phanBien:"Mai Thị Lan Anh", thuKy:"Nguyễn Văn Nam"},
+  {tt:43, mon:"Phân Tích diễn ngôn", gvViet:"Trương Phi Luân", ngay:"19/05/2026", gio:"09:30", phong:"D105", chuTich:"Nguyễn Lưu Như Quỳnh", phanBien:"Ngô Ngọc Thụy", thuKy:"Nguyễn Văn Nam"},
+  {tt:44, mon:"Văn Học Anh Mỹ", gvViet:"Nguyễn Lưu Như Quỳnh", ngay:"19/05/2026", gio:"10:30", phong:"D105", chuTich:"Trương Phi Luân", phanBien:"Nguyễn Văn Nam", thuKy:"Ngô Ngọc Thụy"},
+  {tt:45, mon:"Phát triển tài liệu giảng dạy", gvViet:"Nguyễn Thị Hà Phương", ngay:"21/05/2026", gio:"10:30", phong:"D104", chuTich:"Đặng Thị Tuyết Nhung", phanBien:"Bùi Hồng Hà", thuKy:"Ngô Ngọc Thụy"},
+  // Chưa có hội đồng — chỉ GV viết ĐCCT mới thấy, không có file hội đồng
+  {tt:46, mon:"Thực tập sư phạm đợt 1", gvViet:"Dương Thanh Tú", ngay:"21/05/2026", gio:"15:00", phong:"D104", chuTich:"Nguyễn Thị Hà Phương", phanBien:"Bùi Hồng Hà", thuKy:"Vũ Thu Hà"},
+  {tt:47, mon:"Thực tập sư phạm đợt 2", gvViet:"Nguyễn Thị Hà Phương", ngay:"21/05/2026", gio:"15:30", phong:"D104", chuTich:"Dương Thanh Tú", phanBien:"Bùi Hồng Hà", thuKy:"Vũ Thu Hà"},
 ];
 
 const CRITERIA = [
@@ -596,7 +611,7 @@ let state = {
 const ALL_GV = [...new Set([
   ...SCHEDULE.map(s=>s.gvViet), ...SCHEDULE.map(s=>s.chuTich),
   ...SCHEDULE.map(s=>s.phanBien), ...SCHEDULE.map(s=>s.thuKy),
-])].sort((a,b)=>a.localeCompare(b,'vi'));
+].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'vi'));
 
 function init() {
   renderGVDropdown();
@@ -608,8 +623,7 @@ function init() {
 // ============================================================
 const ddState = {};
 
-function toggleDD(id, event) {
-  if(event) event.stopPropagation();
+function toggleDD(id) {
   const menu = document.getElementById(`dd-${id}-menu`);
   const trigger = document.getElementById(`dd-${id}-trigger`);
   const isOpen = menu.classList.contains('open');
@@ -622,7 +636,8 @@ function toggleDD(id, event) {
   }
 }
 
-function closeAllDropdowns() {
+function closeAllDropdowns(e) {
+  if(e && e.target.closest('.dropdown-wrap')) return;
   document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
   document.querySelectorAll('.dropdown-trigger.open').forEach(t => t.classList.remove('open'));
 }
@@ -698,7 +713,16 @@ function goToStep2() {
 }
 
 function goToStep3() {
-  if(!state.session) return;
+  // Called directly only in rare cases; normal flow uses goToStep3WithResubmitCheck
+  renderFormSections();
+  goToStep(3);
+}
+
+function goBackAndResubmit() {
+  // Go back to form (step 3) with data still intact for editing
+  state_isResubmit = true;
+  document.getElementById('resubmit-banner').style.display = 'flex';
+  document.getElementById('resubmit-info').textContent = 'Bạn đang chỉnh sửa để nộp lại. File cũ sẽ bị ghi đè.';
   renderFormSections();
   goToStep(3);
 }
@@ -745,7 +769,7 @@ function renderSessions() {
     if(!byDay[s.ngay]) byDay[s.ngay] = [];
     byDay[s.ngay].push(s);
   });
-  const dayNames = {'11/05/2026':'Thứ Hai, 11/05/2026','12/05/2026':'Thứ Ba, 12/05/2026','13/05/2026':'Thứ Tư, 13/05/2026'};
+  const dayNames = {'19/05/2026':'Thứ Ba, 19/05/2026','20/05/2026':'Thứ Tư, 20/05/2026','21/05/2026':'Thứ Năm, 21/05/2026'};
 
   container.innerHTML = Object.entries(byDay).map(([day,rows])=>`
     <div style="font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px;">
@@ -774,6 +798,7 @@ function selectSession(tt) {
   state.filesNeeded = getFilesNeeded(state.roles);
   document.querySelectorAll('.session-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById(`sc-${tt}`)?.classList.add('selected');
+  // Nếu chưa có hội đồng, chỉ GV viết ĐCCT thấy được — không có form cần điền
   document.getElementById('btn-step3').disabled = false;
 }
 
@@ -821,6 +846,7 @@ function renderFormSections() {
     </div>`;
   });
   document.getElementById('form-sections').innerHTML = html;
+  initEditableDefaults();
   initScoreListeners();
 }
 
@@ -864,8 +890,37 @@ function radioField(id, label, opts) {
   </div>`;
 }
 
+function editableField(id, label, defaultVal, multiline=false, hint='') {
+  // Pre-filled editable field — sets state on load AND on change
+  const eid = `f-${id}`;
+  // Schedule setField call after render via data-default attr, picked up by initEditableDefaults()
+  if(multiline) {
+    return `<div class="field">
+      <label class="field-label">${label} <span style="font-size:10px;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:500;margin-left:4px">Tự động điền – có thể sửa</span></label>
+      ${hint?`<p class="field-hint" style="margin-bottom:6px">${hint}</p>`:''}
+      <textarea id="${eid}" rows="2" data-default="${defaultVal.replace(/"/g,'&quot;')}" oninput="setField('${id}',this.value)">${defaultVal}</textarea>
+    </div>`;
+  }
+  return `<div class="field">
+    <label class="field-label">${label} <span style="font-size:10px;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:500;margin-left:4px">Tự động điền – có thể sửa</span></label>
+    ${hint?`<p class="field-hint" style="margin-bottom:6px">${hint}</p>`:''}
+    <input type="text" id="${eid}" value="${defaultVal.replace(/"/g,'&quot;')}" data-default="${defaultVal.replace(/"/g,'&quot;')}" oninput="setField('${id}',this.value)" />
+  </div>`;
+}
+
 function renderFile1() {
-  return tf('gio_ket_thuc','Giờ kết thúc phiên họp','','VD: 09:00',false,true)
+  const s = state.session;
+  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#0c4a6e;">
+    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
+  </div>`
+    + editableField('ten_de_cuong','Tên đề cương', s.mon)
+    + editableField('ten_tac_gia','Tác giả (GV viết ĐCCT)', s.gvViet)
+    + editableField('thoi_gian','Thời gian họp', `${s.gio} giờ, ngày ${s.ngay}`)
+    + editableField('dia_diem','Địa điểm', `Phòng ${s.phong}, Trường Đại học Đồng Nai`)
+    + editableField('ten_chu_tich','Chủ tịch hội đồng', s.chuTich||'')
+    + editableField('ten_thu_ky','Thư ký hội đồng', s.thuKy||'')
+    + editableField('ten_phan_bien','Phản biện', s.phanBien||'')
+    + tf('gio_ket_thuc','Giờ kết thúc phiên họp','','VD: 09:00',false,true)
     + tf('vang_mat','Thành viên vắng mặt và lý do','','Để trống nếu không có',true)
     + tf('phat_bieu','Tóm tắt phần phát biểu của hội đồng','','',true)
     + tf('tra_loi','Tóm tắt phần trả lời của tác giả','','',true)
@@ -877,7 +932,16 @@ function renderFile1() {
 }
 
 function renderFile2() {
-  return tf('pb_hinh_thuc','1. Về hình thức','','',true)
+  const s = state.session;
+  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#0c4a6e;">
+    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
+  </div>`
+    + editableField('pb2_ten_dc','Tên đề cương', s.mon)
+    + editableField('pb2_tac_gia','Tác giả', s.gvViet)
+    + editableField('pb2_hocvi_tg','Học hàm/học vị tác giả', 'Thạc sĩ')
+    + editableField('pb2_phan_bien','Người phản biện', s.phanBien||'')
+    + editableField('pb2_hocvi_pb','Học hàm/học vị người phản biện', 'Thạc sĩ')
+    + tf('pb_hinh_thuc','1. Về hình thức','','',true)
     + tf('pb_noi_dung','2. Về nội dung (mục tiêu, CĐR, hình thức dạy học, KTĐG)','','',true)
     + tf('pb_y_nghia','3. Về ý nghĩa khoa học và thực tiễn','','',true)
     + tf('pb_dg_chung','4. Đánh giá chung','','',true)
@@ -889,10 +953,17 @@ function renderFile2() {
 }
 
 function renderFile3() {
-  const nguoi = state.roles.includes('Thư ký') ? state.session.thuKy
-    : state.roles.includes('Chủ tịch hội đồng') ? state.session.chuTich : '';
-  return `<div class="alert alert-info" style="margin-bottom:14px"><span>ℹ️</span>
-    <div>Người nhận xét: <strong>${nguoi}</strong></div></div>`
+  const s = state.session;
+  const nguoi = state.roles.includes('Thư ký') ? s.thuKy
+    : state.roles.includes('Chủ tịch hội đồng') ? s.chuTich : '';
+  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#0c4a6e;">
+    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
+  </div>`
+    + editableField('f3_ten_dc','Tên đề cương', s.mon)
+    + editableField('f3_tac_gia','Tác giả', s.gvViet)
+    + editableField('f3_hocvi_tg','Học vị tác giả', 'Thạc sĩ')
+    + editableField('f3_nguoi_nx','Họ tên người nhận xét', nguoi||'')
+    + editableField('f3_hocvi_nx','Học vị người nhận xét', 'Thạc sĩ')
     + tf('f3_hinh_thuc','1. Về hình thức trình bày','','',true)
     + tf('f3_cau_truc','2. Về cấu trúc của đề cương','','',true)
     + tf('f3_day_hoc','3. Về hình thức dạy học và kiểm tra đánh giá','','',true)
@@ -904,11 +975,16 @@ function renderFile3() {
 }
 
 function renderFile4() {
-  const nguoi = state.roles.includes('Phản biện') ? state.session.phanBien
-    : state.roles.includes('Chủ tịch hội đồng') ? state.session.chuTich : state.session.thuKy;
-  return `<div class="alert alert-info" style="margin-bottom:14px"><span>ℹ️</span>
-    <div>Người đánh giá: <strong>${nguoi}</strong></div></div>
-    <div style="overflow-x:auto">
+  const s = state.session;
+  const nguoi = state.roles.includes('Phản biện') ? s.phanBien
+    : state.roles.includes('Chủ tịch hội đồng') ? s.chuTich : s.thuKy;
+  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#0c4a6e;">
+    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
+  </div>`
+    + editableField('f4_ten_hp','Tên học phần', s.mon)
+    + editableField('f4_tac_gia','Họ và tên tác giả', s.gvViet)
+    + editableField('f4_nguoi_dg','Họ và tên người đánh giá', nguoi||'')
+    + `<div style="overflow-x:auto;margin-top:8px">
     <table class="score-table">
       <thead><tr>
         <th style="width:55%">Tiêu chí</th>
@@ -934,6 +1010,17 @@ function renderFile4() {
 }
 
 function initScoreListeners() {}
+
+function initEditableDefaults() {
+  // Push default values of all pre-filled editable fields into state.formData
+  document.querySelectorAll('[data-default]').forEach(el => {
+    const id = el.id.replace('f-','');
+    if(!(id in state.formData)) {
+      state.formData[id] = el.dataset.default;
+    }
+    el.value = state.formData[id];
+  });
+}
 
 function updateScore(i, val) {
   const max = CRITERIA[i].max;
@@ -964,118 +1051,116 @@ function buildDoc(fileNum) {
   const f = state.formData;
   const sc = state.scores;
 
+  // Helper: get from formData if edited, else fall back to session field
+  const fd = (key, fallback='') => f[key] !== undefined ? f[key] : fallback;
+
   if(fileNum===1) return `BIÊN BẢN HỌP HỘI ĐỒNG ĐÁNH GIÁ - NGHIỆM THU ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
 ================================================================================
 
-1. Tên đề cương: ${s.mon}
-   Tác giả: ${s.gvViet}
+1. Tên đề cương: ${fd('ten_de_cuong', s.mon)}
+   Tác giả: ${fd('ten_tac_gia', s.gvViet)}
 
-2. Thời gian họp: ${s.gio} giờ, ngày ${s.ngay}
-   Thời gian kết thúc: ${f.gio_ket_thuc||'……'} giờ
+2. Thời gian họp: ${fd('thoi_gian', s.gio + ' giờ, ngày ' + s.ngay)}
+   Thời gian kết thúc: ${fd('gio_ket_thuc','……')} giờ
 
-3. Địa điểm: Phòng ${s.phong}, Trường Đại học Đồng Nai
+3. Địa điểm: ${fd('dia_diem', 'Phòng ' + s.phong + ', Trường Đại học Đồng Nai')}
 
 4. Thành phần tham dự:
    4.1. Thành viên có mặt:
-       - Chủ tịch Hội đồng: ${s.chuTich}
-       - Thư ký Hội đồng: ${s.thuKy}
-       - Phản biện: ${s.phanBien}
-   4.2. Thành viên vắng mặt: ${f.vang_mat||'Không có'}
+       - Chủ tịch Hội đồng: ${fd('ten_chu_tich', s.chuTich||'')}
+       - Thư ký Hội đồng: ${fd('ten_thu_ky', s.thuKy||'')}
+       - Phản biện: ${fd('ten_phan_bien', s.phanBien||'')}
+   4.2. Thành viên vắng mặt: ${fd('vang_mat','Không có')}
 
 5. Nội dung phiên họp:
-   Sau khi ${s.thuKy} đọc Quyết định thành lập Hội đồng, ${s.chuTich} điều hành phiên họp.
+   Sau khi ${fd('ten_thu_ky', s.thuKy||'')} đọc Quyết định thành lập Hội đồng, ${fd('ten_chu_tich', s.chuTich||'')} điều hành phiên họp.
 
    5.1. Phần trình bày của tác giả:
-   ${s.gvViet} trình bày tổng quan đề cương chi tiết học phần bao gồm mục tiêu, chuẩn đầu ra, hình thức giảng dạy và kiểm tra đánh giá.
+   ${fd('ten_tac_gia', s.gvViet)} trình bày tổng quan đề cương chi tiết học phần bao gồm mục tiêu, chuẩn đầu ra, hình thức giảng dạy và kiểm tra đánh giá.
 
    5.2. Phần nhận xét của phản biện (có văn bản kèm theo).
 
    5.3. Phần phát biểu, đặt câu hỏi:
-${f.phat_bieu||''}
+${fd('phat_bieu')}
 
    5.4. Phần trả lời của tác giả:
-${f.tra_loi||''}
+${fd('tra_loi')}
 
    5.5. Kết luận của Chủ tịch Hội đồng:
-${f.ket_luan_ct||''}
+${fd('ket_luan_ct')}
 
 6. Xếp loại:
-   - Tổng số điểm: ${f.tong_diem||''}
-   - Xếp loại: ${f.xep_loai||''}
-   - Kết luận: ${f.ket_luan||''}
+   - Tổng số điểm: ${fd('tong_diem')}
+   - Xếp loại: ${fd('xep_loai')}
+   - Kết luận: ${fd('ket_luan')}
 
 7. Kiến nghị của Hội đồng:
-${f.kien_nghi||''}
+${fd('kien_nghi')}
 
-Phiên họp kết thúc vào lúc ${f.gio_ket_thuc||'……'} giờ, ngày ${s.ngay}.
+Phiên họp kết thúc vào lúc ${fd('gio_ket_thuc','……')} giờ, ngày ${s.ngay}.
 
          CHỦ TỊCH HỘI ĐỒNG                    THƯ KÝ
-           ${s.chuTich}                    ${s.thuKy}`;
+           ${fd('ten_chu_tich', s.chuTich||'')}                    ${fd('ten_thu_ky', s.thuKy||'')}`;
 
   if(fileNum===2) return `NHẬN XÉT - PHẢN BIỆN ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
 ================================================================================
 
-Tên đề cương: ${s.mon}
-Tác giả: ${s.gvViet}
-Người phản biện: ${s.phanBien}
+Tên đề cương: ${fd('pb2_ten_dc', s.mon)}
+Tác giả (học hàm, học vị): ${fd('pb2_hocvi_tg','Thạc sĩ')} ${fd('pb2_tac_gia', s.gvViet)}
+Người phản biện (học hàm, học vị): ${fd('pb2_hocvi_pb','Thạc sĩ')} ${fd('pb2_phan_bien', s.phanBien||'')}
 Nơi công tác: Trường Đại học Đồng Nai – Khoa Ngoại Ngữ
 
 NHẬN XÉT:
 
 1. Về hình thức:
-${f.pb_hinh_thuc||''}
+${fd('pb_hinh_thuc')}
 
 2. Về nội dung:
-${f.pb_noi_dung||''}
+${fd('pb_noi_dung')}
 
 3. Về ý nghĩa khoa học và thực tiễn:
-${f.pb_y_nghia||''}
+${fd('pb_y_nghia')}
 
 4. Đánh giá chung:
-${f.pb_dg_chung||''}
+${fd('pb_dg_chung')}
 
 5. Góp ý:
-${f.pb_gop_y||''}
+${fd('pb_gop_y')}
 
 6. Kết luận: ${f.pb_ket_luan==='dong_y'?'[X] Đồng ý nghiệm thu     [ ] Không đồng ý nghiệm thu':'[ ] Đồng ý nghiệm thu     [X] Không đồng ý nghiệm thu'}
 
                               Đồng Nai, ngày ${s.ngay}
                          Người nhận xét phản biện
-                              ${s.phanBien}`;
+              ${fd('pb2_hocvi_pb','Thạc sĩ')} ${fd('pb2_phan_bien', s.phanBien||'')}`;
 
-  if(fileNum===3) {
-    const nguoi = state.roles.includes('Thư ký') ? s.thuKy : s.chuTich;
-    return `PHIẾU ĐÁNH GIÁ – NHẬN XÉT ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+  if(fileNum===3) return `PHIẾU ĐÁNH GIÁ – NHẬN XÉT ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
 ================================================================================
 
-Tên đề cương: ${s.mon}
-Tác giả: ${s.gvViet}
-Người nhận xét: ${nguoi}
+Tên đề cương: ${fd('f3_ten_dc', s.mon)}
+Tác giả (học vị): ${fd('f3_hocvi_tg','Thạc sĩ')} ${fd('f3_tac_gia', s.gvViet)}
+Người nhận xét (học vị): ${fd('f3_hocvi_nx','Thạc sĩ')} ${fd('f3_nguoi_nx','')}
 Nơi công tác: Trường Đại học Đồng Nai – Khoa Ngoại Ngữ
 
 NỘI DUNG NHẬN XÉT:
 
 1. Về hình thức trình bày:
-${f.f3_hinh_thuc||''}
+${fd('f3_hinh_thuc')}
 
 2. Về cấu trúc của đề cương:
-${f.f3_cau_truc||''}
+${fd('f3_cau_truc')}
 
 3. Về hình thức dạy học và kiểm tra đánh giá:
-${f.f3_day_hoc||''}
+${fd('f3_day_hoc')}
 
 4. Đề xuất góp ý:
-${f.f3_gop_y||''}
+${fd('f3_gop_y')}
 
 5. Kết quả đánh giá: ${f.f3_ket_qua==='dong_y'?'[X] Đồng ý nghiệm thu     [ ] Không đồng ý nghiệm thu':'[ ] Đồng ý nghiệm thu     [X] Không đồng ý nghiệm thu'}
 
                               Đồng Nai, ngày ${s.ngay}
-                              ${nguoi}`;
-  }
+                              ${fd('f3_hocvi_nx','Thạc sĩ')} ${fd('f3_nguoi_nx','')}`;
 
   if(fileNum===4) {
-    const nguoi = state.roles.includes('Phản biện') ? s.phanBien
-      : state.roles.includes('Chủ tịch hội đồng') ? s.chuTich : s.thuKy;
     const total = sc.reduce((a,b)=>a+b,0);
     const scoreLines = CRITERIA.map((c,i)=>
       `  ${c.tc.padEnd(30,' ')} (tối đa ${String(c.max).padStart(2,' ')}):  ${sc[i]}`
@@ -1084,9 +1169,9 @@ ${f.f3_gop_y||''}
 (Dành cho các thành viên trong Hội đồng thẩm định)
 ================================================================================
 
-Tên học phần: ${s.mon}
-Tác giả: ${s.gvViet}
-Người đánh giá: ${nguoi}
+Tên học phần: ${fd('f4_ten_hp', s.mon)}
+Tác giả: ${fd('f4_tac_gia', s.gvViet)}
+Người đánh giá: ${fd('f4_nguoi_dg','')}
 Ngày: ${s.ngay}
 
 TIÊU CHÍ ĐÁNH GIÁ:
@@ -1108,92 +1193,46 @@ ${f.f4_nhan_xet||''}
 // ============================================================
 // SUBMIT
 // ============================================================
-async function handleSubmit() {
-  const errEl = document.getElementById('form-error');
-  errEl.style.display = 'none';
+let state_isResubmit = false;
 
-  showLoading('Đang tạo hồ sơ...', 'Vui lòng chờ trong giây lát');
-
-  const docs = state.filesNeeded.map(fn => ({
-    fileNum: fn,
-    content: buildDoc(fn),
-    filename: `${state.session.mon.replace(/[\/\\?%*:|"<>]/g,'-')}_File${fn}.txt`,
-  }));
-
-  const payload = {
-    action: 'submitHoSo',
-    gv: state.gv,
-    session: state.session,
-    roles: state.roles,
-    filesNeeded: state.filesNeeded,
-    formData: state.formData,
-    scores: state.scores,
-    docs: docs.map(d => ({fileNum: d.fileNum, filename: d.filename, content: btoa(unescape(encodeURIComponent(d.content)))})),
-    submittedAt: new Date().toISOString(),
-  };
-
+async function goToStep3WithResubmitCheck() {
+  if (!state.session) return;
+  // Check if previous submission exists
+  showLoading('Đang kiểm tra...', 'Xem bạn đã nộp hồ sơ này chưa');
   try {
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload),
-    });
+    const role = state.roles[0] || '';
+    const url  = `${GAS_URL}?action=checkSubmission&mon=${encodeURIComponent(state.session.mon)}&role=${encodeURIComponent(role)}`;
+    const res  = await fetch(url);
     const data = await res.json();
-
     hideLoading();
-
-    if(data.success) {
-      renderResults(docs, data.driveLinks || {});
-      goToStep(4);
+    if (data.exists && data.data) {
+      const d = data.data;
+      const dt = new Date(d.submittedAt).toLocaleString('vi-VN');
+      // Show resubmit confirm banner
+      document.getElementById('resubmit-banner').style.display = 'flex';
+      document.getElementById('resubmit-info').textContent =
+        `Bạn đã nộp lần ${d.lan_nop} vào ${dt}. File cũ sẽ bị ghi đè khi nộp lại.`;
+      state_isResubmit = true;
     } else {
-      throw new Error(data.error || 'GAS trả về lỗi không xác định');
+      document.getElementById('resubmit-banner').style.display = 'none';
+      state_isResubmit = false;
     }
   } catch(e) {
     hideLoading();
-    document.getElementById('form-error-text').textContent = 'Lỗi kết nối: ' + e.message + '. Hãy thử lại hoặc liên hệ admin.';
-    errEl.style.display = 'flex';
+    document.getElementById('resubmit-banner').style.display = 'none';
+    state_isResubmit = false;
   }
+  renderFormSections();
+  goToStep(3);
 }
 
-function renderResults(docs, driveLinks) {
-  const s = state.session;
-  document.getElementById('result-summary-text').textContent =
-    `${s.mon} · ${s.ngay} · ${s.gio} · Phòng ${s.phong} · Vai trò: ${state.roles.join(', ')}`;
-
-  document.getElementById('result-files').innerHTML = docs.map(d=>{
-    const m = FILE_META[d.fileNum];
-    const link = driveLinks[d.fileNum];
-    return `<div class="result-file">
-      <div class="rf-header">
-        <div class="file-num-badge" style="background:${m.bg};color:${m.color};width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${m.icon}</div>
-        <div>
-          <div class="rf-title">File ${d.fileNum}: ${m.name}</div>
-          <div class="rf-sub">${d.filename}</div>
-        </div>
-        <span class="upload-status ${link?'us-done':'us-error'}" style="margin-left:auto">
-          ${link?'✅ Đã lên Drive':'⚠️ Chưa lên Drive'}
-        </span>
-      </div>
-      <div class="rf-actions">
-        <button class="btn btn-secondary" style="flex:1;font-size:13px" onclick="downloadFile('${d.filename}', ${d.fileNum})">⬇️ Tải về máy</button>
-        ${link?`<a class="btn btn-success" style="flex:1;font-size:13px;text-decoration:none;justify-content:center;display:inline-flex;align-items:center;gap:8px" href="${link}" target="_blank">☁️ Xem trên Drive</a>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// Save docs for download
-let _lastDocs = [];
 async function handleSubmit() {
   const errEl = document.getElementById('form-error');
   errEl.style.display = 'none';
-  showLoading('Đang tạo hồ sơ...', 'Hệ thống đang xử lý và lưu lên Drive');
-
-  _lastDocs = state.filesNeeded.map(fn => ({
-    fileNum: fn,
-    content: buildDoc(fn),
-    filename: `${state.session.mon.replace(/[\/\\?%*:|"<>]/g,'-')}_File${fn}.txt`,
-  }));
+  showLoading(
+    state_isResubmit ? '🔄 Đang nộp lại hồ sơ...' : '⏳ Đang tạo hồ sơ...',
+    'GAS đang copy template, điền thông tin và xuất file .docx'
+  );
 
   const payload = {
     action: 'submitHoSo',
@@ -1203,12 +1242,8 @@ async function handleSubmit() {
     filesNeeded: state.filesNeeded,
     formData: state.formData,
     scores: state.scores,
-    docs: _lastDocs.map(d=>({
-      fileNum: d.fileNum,
-      filename: d.filename,
-      content: btoa(unescape(encodeURIComponent(d.content)))
-    })),
     submittedAt: new Date().toISOString(),
+    isResubmit: state_isResubmit,
   };
 
   try {
@@ -1220,27 +1255,48 @@ async function handleSubmit() {
     });
     const data = await res.json();
     hideLoading();
-    if(data.success) {
-      renderResults(_lastDocs, data.driveLinks || {});
+    if (data.success) {
+      renderResults(data.driveLinks || {});
       goToStep(4);
     } else {
       throw new Error(data.error || 'Lỗi không xác định');
     }
   } catch(e) {
     hideLoading();
-    document.getElementById('form-error-text').textContent = 'Lỗi: ' + e.message;
+    document.getElementById('form-error-text').textContent =
+      'Lỗi: ' + e.message + '. Vui lòng thử lại hoặc liên hệ Th.S Dương Thanh Tú.';
     errEl.style.display = 'flex';
   }
 }
 
-function downloadFile(filename, fileNum) {
-  const doc = _lastDocs.find(d=>d.fileNum===fileNum);
-  if(!doc) return;
-  const blob = new Blob(['\uFEFF'+doc.content], {type:'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+function renderResults(driveLinks) {
+  const s   = state.session;
+  const tag = state_isResubmit ? '🔄 Nộp lại' : '✅ Nộp mới';
+  document.getElementById('result-summary-text').innerHTML =
+    `<strong>${tag}</strong> · ${s.mon} · ${s.ngay} · ${s.gio} · Phòng ${s.phong} · <em>Vai trò: ${state.roles.join(', ')}</em>`;
+
+  // Build file list from driveLinks keys
+  const entries = Object.entries(driveLinks);
+  document.getElementById('result-files').innerHTML = entries.map(([key, url]) => {
+    const [fileNum, roleShort] = key.split('_');
+    const m = FILE_META[Number(fileNum)];
+    const safeName = `${s.mon}_${m.name}_${roleShort}.docx`.replace(/[\/\\?%*:|"<>]/g,'-');
+    return `<div class="result-file">
+      <div class="rf-header">
+        <div style="background:${m.bg};color:${m.color};width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${m.icon}</div>
+        <div style="flex:1;margin-left:10px">
+          <div class="rf-title">${m.name} · ${roleShort}</div>
+          <div class="rf-sub">${safeName}</div>
+        </div>
+        <span class="upload-status us-done">✅ Đã lên Drive</span>
+      </div>
+      <div class="rf-actions" style="margin-top:10px">
+        <a class="btn btn-success" style="flex:1;font-size:13px;text-decoration:none;justify-content:center;display:inline-flex;align-items:center;gap:6px" href="${url}" target="_blank">
+          ⬇️ Tải file .docx
+        </a>
+      </div>
+    </div>`;
+  }).join('') || '<p style="color:var(--text-secondary);font-size:13px;text-align:center;padding:16px">Không có file nào được tạo. Vui lòng liên hệ admin.</p>';
 }
 
 // ============================================================
@@ -1256,7 +1312,7 @@ function hideLoading() {
 }
 function resetAll() {
   state = {gv:null,session:null,roles:[],filesNeeded:[],formData:{},scores:Array(18).fill(0),currentStep:1};
-  _lastDocs = [];
+  state_isResubmit = false;
   document.getElementById('dd-gv-display').innerHTML = '<span class="placeholder">Gõ tên để tìm nhanh...</span>';
   document.getElementById('gv-selected-info').style.display = 'none';
   document.getElementById('btn-step2').disabled = true;

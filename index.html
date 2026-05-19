@@ -445,7 +445,7 @@
   <div class="header-badge">🎓 Khoa Ngoại ngữ – ĐH Đồng Nai</div>
   <h1>📋 Nộp Hồ Sơ Phản Biện ĐCCT 2026</h1>
   <p>Kính mời Thầy/Cô điền đầy đủ thông tin để tạo và lưu hồ sơ phản biện</p>
-  <button class="header-upload-btn" onclick="openUploadScreen()">📤 Nộp ảnh chữ ký</button>
+  <button class="header-upload-btn" onclick="openUploadScreen()">📤 Nộp file PDF có chữ ký</button>
 </div>
 
 <!-- PROGRESS -->
@@ -578,6 +578,27 @@
       </div>
     </div>
     <div id="result-files"></div>
+
+    <!-- Email delivery block -->
+    <div class="card" style="margin-top:12px;border:1.5px solid #dbeafe;">
+      <div class="card-body" style="padding:16px 20px">
+        <div style="font-size:16px;font-weight:600;margin-bottom:10px">📧 Nhận file qua email</div>
+        <p style="font-size:15px;color:var(--text-secondary);margin-bottom:12px">Nhập email để nhận link tải tất cả file .docx vừa tạo.</p>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <div style="flex:1">
+            <input type="email" id="email-delivery-input" placeholder="vd: giaovien@dnu.edu.vn"
+              style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:16px;font-family:inherit"
+              oninput="document.getElementById('btn-send-email').disabled=!this.value.includes('@')" />
+          </div>
+          <button class="btn btn-primary" id="btn-send-email" disabled onclick="sendFilesToEmail()"
+            style="white-space:nowrap;padding:10px 18px">
+            Gửi
+          </button>
+        </div>
+        <div id="email-delivery-status" style="display:none;margin-top:10px"></div>
+      </div>
+    </div>
+
     <div class="alert alert-info" style="margin-top: 12px;">
       <span>📌</span>
       <div style="font-size: 15px; line-height: 1.6;">
@@ -592,7 +613,7 @@
     </button>
   </div>
 
-  <!-- SCREEN 5: Nộp ảnh chữ ký -->
+  <!-- SCREEN 5: Nộp file PDF có chữ ký -->
   <div class="screen" id="screen-5">
 
     <!-- Sub-step A: Chọn GV -->
@@ -714,7 +735,7 @@
 // ============================================================
 // CONFIG — SỬA URL NÀY SAU KHI DEPLOY GAS
 // ============================================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwJKrY_EqAy0tnsPl6g66cUVwVItX1cQxSrcR-6DgSobs2L2Re8osHt3Chg4_9Gob6j/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwThTfGReHHS7LhFXY5TEOM79GbeL9SohsHHfGUgxv2dktxnlXn9Voq89flRDFIOKSx/exec";
 
 // ============================================================
 // DATA
@@ -1121,8 +1142,8 @@ function renderFile1() {
     + editableField('ten_phan_bien','Phản biện', s.phanBien||'')
     + tf('gio_ket_thuc','Giờ kết thúc phiên họp','','VD: 09:00',false,true)
     + tf('vang_mat','Thành viên vắng mặt và lý do','','Để trống nếu không có',true)
-    + tf('phat_bieu','Phần phát biểu, đặt câu hỏi của các thành viên Hội đồng và đại biểu tham dự','','',true)
-    + tf('tra_loi','Phần trả lời của tác giả','','',true)
+    + tf('phat_bieu','Tóm tắt phần phát biểu của hội đồng','','',true)
+    + tf('tra_loi','Tóm tắt phần trả lời của tác giả','','',true)
     + tf('ket_luan_ct','Kết luận của Chủ tịch hội đồng','Tóm tắt về mục tiêu, CĐR, hình thức giảng dạy, KTĐG và giá trị sử dụng','',true)
     + tf('tong_diem','Tổng số điểm','','VD: 85')
     + tf('xep_loai','Xếp loại','','VD: Đạt / Tốt / Xuất sắc')
@@ -1455,7 +1476,12 @@ async function handleSubmit() {
     const data = await res.json();
     hideLoading();
     if (data.success) {
-      renderResults(data.driveLinks || {});
+      state.lastDriveLinks = data.driveLinks || {};
+      renderResults(state.lastDriveLinks);
+      // Reset email block
+      document.getElementById('email-delivery-input').value = '';
+      document.getElementById('btn-send-email').disabled = true;
+      document.getElementById('email-delivery-status').style.display = 'none';
       goToStep(4);
     } else {
       throw new Error(data.error || 'Lỗi không xác định');
@@ -1496,6 +1522,52 @@ function renderResults(driveLinks) {
       </div>
     </div>`;
   }).join('') || '<p style="color:var(--text-secondary);font-size:15px;text-align:center;padding:16px">Không có file nào được tạo. Vui lòng liên hệ admin.</p>';
+}
+
+// ============================================================
+// SEND FILES TO EMAIL
+// ============================================================
+async function sendFilesToEmail() {
+  const email = document.getElementById('email-delivery-input').value.trim();
+  if (!email || !email.includes('@')) return;
+
+  const btn    = document.getElementById('btn-send-email');
+  const status = document.getElementById('email-delivery-status');
+  btn.disabled = true;
+  btn.textContent = 'Đang gửi...';
+  status.style.display = 'none';
+
+  try {
+    const s = state.session;
+    const payload = {
+      action:     'sendFilesEmail',
+      toEmail:    email,
+      gv:         state.gv,
+      mon:        s.mon,
+      ngay:       s.ngay,
+      gio:        s.gio,
+      phong:      s.phong,
+      roles:      state.roles,
+      driveLinks: state.lastDriveLinks,
+    };
+    const res  = await fetch(GAS_URL, {
+      method:  'POST', mode: 'cors',
+      headers: {'Content-Type': 'text/plain'},
+      body:    JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      status.innerHTML = `<div class="alert alert-success" style="margin:0"><span>✅</span><div>Đã gửi email đến <strong>${email}</strong></div></div>`;
+      btn.textContent = 'Đã gửi ✓';
+    } else {
+      throw new Error(data.error || 'Lỗi không xác định');
+    }
+  } catch(err) {
+    status.innerHTML = `<div class="alert alert-error" style="margin:0"><span>⚠️</span><div>Lỗi: ${err.message}</div></div>`;
+    btn.disabled = false;
+    btn.textContent = 'Gửi';
+  }
+  status.style.display = 'block';
 }
 
 // ============================================================

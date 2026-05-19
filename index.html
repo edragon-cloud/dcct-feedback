@@ -527,6 +527,15 @@
           Chọn môn học bạn cần nộp hồ sơ phản biện trong danh sách dưới đây:
         </p>
         <div id="sessions-list"></div>
+
+        <!-- Block: GV là tác giả, không có vai trò hội đồng -->
+        <div id="author-warning" class="alert alert-error" style="display:none;margin-top:12px">
+          <span style="font-size:20px">✋</span>
+          <div>
+            <strong>Bạn là tác giả của đề cương này</strong><br>
+            <span style="font-size:15px">Tác giả không tham gia hội đồng phản biện, do đó không cần tạo hồ sơ cho môn này. Vui lòng chọn môn học khác mà bạn được phân công vai trò <em>Chủ tịch</em>, <em>Phản biện</em>, hoặc <em>Thư ký</em>.</span>
+          </div>
+        </div>
       </div>
     </div>
     <div class="btn-row">
@@ -735,7 +744,7 @@
 // ============================================================
 // CONFIG — SỬA URL NÀY SAU KHI DEPLOY GAS
 // ============================================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw7MurVIJfQrbTq3ALrqyJ9z-ULoLHUewara2ZwU4OAo9P7sDTRX6EEiYJnNWiCNjRp/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwThTfGReHHS7LhFXY5TEOM79GbeL9SohsHHfGUgxv2dktxnlXn9Voq89flRDFIOKSx/exec";
 
 // ============================================================
 // DATA
@@ -1018,8 +1027,16 @@ function selectSession(tt) {
   state.filesNeeded = getFilesNeeded(state.roles);
   document.querySelectorAll('.session-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById(`sc-${tt}`)?.classList.add('selected');
-  // Nếu chưa có hội đồng, chỉ GV viết ĐCCT thấy được — không có form cần điền
-  document.getElementById('btn-step3').disabled = false;
+
+  // Nếu GV là tác giả đề cương (gvViet) — không có vai trò hội đồng
+  const warningEl = document.getElementById('author-warning');
+  if (state.roles.length === 0) {
+    warningEl.style.display = 'flex';
+    document.getElementById('btn-step3').disabled = true;
+  } else {
+    warningEl.style.display = 'none';
+    document.getElementById('btn-step3').disabled = false;
+  }
 }
 
 // ============================================================

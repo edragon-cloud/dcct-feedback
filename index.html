@@ -744,7 +744,7 @@
 // ============================================================
 // CONFIG — SỬA URL NÀY SAU KHI DEPLOY GAS
 // ============================================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwsD_l32EslHNCIbWNqAb0_DicoyyJ_5f9SJ054hbxyb3ZTge_4j4d48FUyB7mVNPEw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwThTfGReHHS7LhFXY5TEOM79GbeL9SohsHHfGUgxv2dktxnlXn9Voq89flRDFIOKSx/exec";
 
 // ============================================================
 // DATA
@@ -825,10 +825,14 @@ const CRITERIA = [
 // STATE
 // ============================================================
 let state = {
-  gv: null, session: null, roles: [], filesNeeded: [],
-  formData: {}, scores: Array(18).fill(0), currentStep: 1,
+  gv: null,
+  session: null,
+  roles: [],
+  filesNeeded: [],
+  formData: {},
+  scores: Array(18).fill(0),
+  currentStep: 1,
 };
-let state_isResubmit = false;
 
 // ============================================================
 // INIT
@@ -846,21 +850,23 @@ function init() {
 // ============================================================
 // DROPDOWN ENGINE
 // ============================================================
+const ddState = {};
+
 function toggleDD(id) {
   const menu = document.getElementById(`dd-${id}-menu`);
   const trigger = document.getElementById(`dd-${id}-trigger`);
   const isOpen = menu.classList.contains('open');
   closeAllDropdowns();
-  if (!isOpen) {
+  if(!isOpen) {
     menu.classList.add('open');
     trigger.classList.add('open');
     const search = document.getElementById(`dd-${id}-search`);
-    if (search) setTimeout(() => search.focus(), 50);
+    if(search) setTimeout(()=>search.focus(),50);
   }
 }
 
 function closeAllDropdowns(e) {
-  if (e && e.target.closest('.dropdown-wrap')) return;
+  if(e && e.target.closest('.dropdown-wrap')) return;
   document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
   document.querySelectorAll('.dropdown-trigger.open').forEach(t => t.classList.remove('open'));
 }
@@ -871,12 +877,13 @@ function filterDD(id, query) {
   const q = query.toLowerCase().normalize('NFC');
   let visible = 0;
   items.forEach(item => {
-    const show = item.dataset.label.toLowerCase().normalize('NFC').includes(q);
+    const txt = item.dataset.label.toLowerCase().normalize('NFC');
+    const show = txt.includes(q);
     item.style.display = show ? '' : 'none';
-    if (show) visible++;
+    if(show) visible++;
   });
   const empty = list.querySelector('.dd-empty');
-  if (empty) empty.style.display = visible === 0 ? '' : 'none';
+  if(empty) empty.style.display = visible === 0 ? '' : 'none';
 }
 
 function renderGVDropdown() {
@@ -895,11 +902,12 @@ function selectGV(gv) {
   document.getElementById('dd-gv-display').innerHTML = `<span class="selected-val">👤 ${gv}</span>`;
   closeAllDropdowns();
   document.getElementById('dd-gv-search').value = '';
-  filterDD('gv', '');
+  filterDD('gv','');
+
   const sessions = SCHEDULE.filter(s=>s.gvViet===gv||s.chuTich===gv||s.phanBien===gv||s.thuKy===gv);
-  document.getElementById('gv-info-text').innerHTML =
-    `Xin chào <strong>${gv}</strong>! Bạn tham gia <strong>${sessions.length}</strong> buổi phản biện.`;
-  document.getElementById('gv-selected-info').style.display = 'flex';
+  const info = document.getElementById('gv-selected-info');
+  document.getElementById('gv-info-text').innerHTML = `Xin chào <strong>${gv}</strong>! Bạn tham gia <strong>${sessions.length}</strong> buổi phản biện.`;
+  info.style.display = 'flex';
   document.getElementById('btn-step2').disabled = false;
 }
 
@@ -907,52 +915,41 @@ function selectGV(gv) {
 // STEP NAVIGATION
 // ============================================================
 function goToStep(n) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(`screen-${n}`).classList.add('active');
   state.currentStep = n;
   updateProgress(n);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 function updateProgress(active) {
-  for (let i = 1; i <= 4; i++) {
+  for(let i=1;i<=4;i++){
     const step = document.getElementById(`step-${i}`);
-    const line = document.getElementById(`line-${i}`);
-    step.classList.remove('active', 'done');
-    if (i < active) step.classList.add('done');
-    else if (i === active) step.classList.add('active');
-    if (line) line.classList.toggle('done', i < active);
+    step.classList.remove('active','done');
+    if(i < active) step.classList.add('done');
+    else if(i === active) step.classList.add('active');
+    if(i < 4) {
+      const line = document.getElementById(`line-${i}`);
+      line.classList.toggle('done', i < active);
+    }
   }
 }
 
 function goToStep2() {
-  if (!state.gv) return;
-  renderSessionList();
+  if(!state.gv) return;
+  renderSessions();
   goToStep(2);
 }
 
 function goToStep3() {
-  renderFormSections();
-  goToStep(3);
-}
-
-// Bỏ checkSubmission — chuyển thẳng sang step 3
-// Resubmit được xử lý bởi GAS (ghi đè file cũ)
-function goToStep3WithResubmitCheck() {
-  if (!state.session) return;
-  // Nếu đã từng nộp (state_isResubmit được set bởi nút "Chỉnh sửa & Nộp lại")
-  // thì banner đã hiện rồi. Nếu là lần đầu, ẩn banner.
-  if (!state_isResubmit) {
-    document.getElementById('resubmit-banner').style.display = 'none';
-  }
+  // Called directly only in rare cases; normal flow uses goToStep3WithResubmitCheck
   renderFormSections();
   goToStep(3);
 }
 
 function goBackAndResubmit() {
+  // Go back to form (step 3) with data still intact for editing
   state_isResubmit = true;
-  state.formData = {};
-  state.scores = Array(18).fill(0);
   document.getElementById('resubmit-banner').style.display = 'flex';
   document.getElementById('resubmit-info').textContent = 'Bạn đang chỉnh sửa để nộp lại. File cũ sẽ bị ghi đè.';
   renderFormSections();
@@ -964,52 +961,58 @@ function goBackAndResubmit() {
 // ============================================================
 function getRoles(gv, row) {
   const r = [];
-  if (row.chuTich === gv) r.push('Chủ tịch hội đồng');
-  if (row.phanBien === gv) r.push('Phản biện');
-  if (row.thuKy === gv) r.push('Thư ký');
+  if(row.chuTich===gv) r.push('Chủ tịch hội đồng');
+  if(row.phanBien===gv) r.push('Phản biện');
+  if(row.thuKy===gv) r.push('Thư ký');
   return r;
 }
 
 function getFilesNeeded(roles) {
-  const set = new Set();
-  roles.forEach(role => {
-    if (role === 'Thư ký')            [1,3,4].forEach(n=>set.add(n));
-    if (role === 'Phản biện')         [2,4].forEach(n=>set.add(n));
-    if (role === 'Chủ tịch hội đồng') [3,4].forEach(n=>set.add(n));
+  const f = new Set();
+  roles.forEach(r => {
+    if(r==='Thư ký') {f.add(1);f.add(3);f.add(4);}
+    if(r==='Phản biện') {f.add(2);f.add(4);}
+    if(r==='Chủ tịch hội đồng') {f.add(3);f.add(4);}
   });
-  return [...set].sort();
+  return [...f].sort();
 }
 
-function roleBadge(role) {
-  const cls = role==='Chủ tịch hội đồng'?'role-ct':role==='Phản biện'?'role-pb':'role-tk';
-  const icon = role==='Chủ tịch hội đồng'?'👑':role==='Phản biện'?'✍️':'📝';
-  return `<span class="role-badge ${cls}">${icon} ${role}</span>`;
+function roleBadge(r) {
+  const cls = r==='Chủ tịch hội đồng'?'role-ct':r==='Phản biện'?'role-pb':'role-tk';
+  const icon = r==='Chủ tịch hội đồng'?'👑':r==='Phản biện'?'✍️':'📝';
+  return `<span class="role-badge ${cls}">${icon} ${r}</span>`;
 }
 
-const DAY_NAMES = {'19/05/2026':'Thứ Ba, 19/05/2026','20/05/2026':'Thứ Tư, 20/05/2026','21/05/2026':'Thứ Năm, 21/05/2026'};
-
-function renderSessionList() {
+function renderSessions() {
   const container = document.getElementById('sessions-list');
-  const sessions = SCHEDULE.filter(s =>
-    s.gvViet===state.gv || s.chuTich===state.gv || s.phanBien===state.gv || s.thuKy===state.gv
+  const sessions = SCHEDULE.filter(s=>
+    s.gvViet===state.gv||s.chuTich===state.gv||s.phanBien===state.gv||s.thuKy===state.gv
   );
-  if (!sessions.length) {
+  if(!sessions.length){
     container.innerHTML = '<div class="no-sessions">Không có buổi phản biện nào.</div>';
     return;
   }
+  // Group by day
   const byDay = {};
-  sessions.forEach(s => { if (!byDay[s.ngay]) byDay[s.ngay] = []; byDay[s.ngay].push(s); });
-  container.innerHTML = Object.entries(byDay).map(([day, rows]) => `
+  sessions.forEach(s=>{
+    if(!byDay[s.ngay]) byDay[s.ngay] = [];
+    byDay[s.ngay].push(s);
+  });
+  const dayNames = {'19/05/2026':'Thứ Ba, 19/05/2026','20/05/2026':'Thứ Tư, 20/05/2026','21/05/2026':'Thứ Năm, 21/05/2026'};
+
+  container.innerHTML = Object.entries(byDay).map(([day,rows])=>`
     <div style="font-size:16px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px;">
-      📅 ${DAY_NAMES[day] || day}
+      📅 ${dayNames[day]||day}
     </div>
-    ${rows.map(row => {
+    ${rows.map(row=>{
       const roles = getRoles(state.gv, row);
       const isSelected = state.session && state.session.tt === row.tt;
       return `<div class="session-card${isSelected?' selected':''}" onclick="selectSession(${row.tt})" id="sc-${row.tt}">
         <div class="mon-name">${row.mon}</div>
         <div class="session-meta">
-          <span>🕐 ${row.gio}</span><span>🚪 Phòng ${row.phong}</span><span>✏️ GV viết: ${row.gvViet}</span>
+          <span>🕐 ${row.gio}</span>
+          <span>🚪 Phòng ${row.phong}</span>
+          <span>✏️ GV viết: ${row.gvViet}</span>
         </div>
         <div class="roles">${roles.map(roleBadge).join('')}</div>
       </div>`;
@@ -1018,14 +1021,14 @@ function renderSessionList() {
 }
 
 function selectSession(tt) {
-  const row = SCHEDULE.find(s => s.tt === tt);
+  const row = SCHEDULE.find(s=>s.tt===tt);
   state.session = row;
   state.roles = getRoles(state.gv, row);
   state.filesNeeded = getFilesNeeded(state.roles);
-
-  document.querySelectorAll('.session-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.session-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById(`sc-${tt}`)?.classList.add('selected');
 
+  // Nếu GV là tác giả đề cương (gvViet) — không có vai trò hội đồng
   const warningEl = document.getElementById('author-warning');
   if (state.roles.length === 0) {
     warningEl.style.display = 'flex';
@@ -1048,6 +1051,7 @@ const FILE_META = {
 
 function renderFormSections() {
   const s = state.session;
+  // Session summary
   document.getElementById('session-summary').innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
       <span style="font-weight:700;font-size:16px">${s.mon}</span>
@@ -1056,10 +1060,11 @@ function renderFormSections() {
     <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:15px;color:var(--text-secondary)">
       <span>🕐 ${s.gio} · 📅 ${s.ngay} · 🚪 Phòng ${s.phong}</span>
       <span>✏️ GV viết: <strong style="color:var(--text)">${s.gvViet}</strong></span>
-    </div>`;
+    </div>
+  `;
 
   let html = '';
-  state.filesNeeded.forEach(fn => {
+  state.filesNeeded.forEach(fn=>{
     const m = FILE_META[fn];
     const colorNum = {1:'1e3a5f',2:'15803d',3:'92400e',4:'7c2d52'}[fn];
     html += `
@@ -1079,6 +1084,7 @@ function renderFormSections() {
   });
   document.getElementById('form-sections').innerHTML = html;
   initEditableDefaults();
+  initScoreListeners();
 }
 
 function toggleSection(fn) {
@@ -1090,19 +1096,19 @@ function toggleSection(fn) {
 }
 
 function renderFileFields(fn) {
-  if (fn===1) return renderFile1();
-  if (fn===2) return renderFile2();
-  if (fn===3) return renderFile3();
-  if (fn===4) return renderFile4();
+  if(fn===1) return renderFile1();
+  if(fn===2) return renderFile2();
+  if(fn===3) return renderFile3();
+  if(fn===4) return renderFile4();
   return '';
 }
 
-// ── Field helpers ─────────────────────────────────────────────
-function tf(id, label, hint='', placeholder='', multiline=false, required=false) {
+function tf(id, label, hint='', placeholder='', multiline=false, required=false, badge='') {
+  const badgeHtml = badge ? `<span class="badge">${badge}</span>` : '';
   const req = required ? '<span class="req">*</span>' : '';
   return `<div class="field">
-    <label class="field-label">${label} ${req}</label>
-    ${hint ? `<p class="field-hint" style="margin-bottom:6px">${hint}</p>` : ''}
+    <label class="field-label">${label} ${req} ${badgeHtml}</label>
+    ${hint?`<p class="field-hint" style="margin-bottom:6px">${hint}</p>`:''}
     ${multiline
       ? `<textarea id="f-${id}" rows="3" placeholder="${placeholder}" oninput="setField('${id}',this.value)"></textarea>`
       : `<input type="text" id="f-${id}" placeholder="${placeholder}" oninput="setField('${id}',this.value)" />`
@@ -1114,51 +1120,36 @@ function radioField(id, label, opts) {
   return `<div class="field">
     <label class="field-label">${label}</label>
     <div class="radio-group">
-      ${opts.map(o => `<label class="radio-opt">
+      ${opts.map(o=>`<label class="radio-opt">
         <input type="radio" name="${id}" value="${o.val}" onchange="setField('${id}','${o.val}')"> ${o.label}
       </label>`).join('')}
     </div>
   </div>`;
 }
 
-function editableField(id, label, defaultVal, multiline=false) {
-  const badge = `<span style="font-size:13px;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:500;margin-left:4px">Tự động điền – có thể sửa</span>`;
-  const esc = defaultVal.replace(/"/g, '&quot;');
-  if (multiline) {
+function editableField(id, label, defaultVal, multiline=false, hint='') {
+  // Pre-filled editable field — sets state on load AND on change
+  const eid = `f-${id}`;
+  // Schedule setField call after render via data-default attr, picked up by initEditableDefaults()
+  if(multiline) {
     return `<div class="field">
-      <label class="field-label">${label} ${badge}</label>
-      <textarea id="f-${id}" rows="2" data-default="${esc}" oninput="setField('${id}',this.value)">${defaultVal}</textarea>
+      <label class="field-label">${label} <span style="font-size:13px;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:500;margin-left:4px">Tự động điền – có thể sửa</span></label>
+      ${hint?`<p class="field-hint" style="margin-bottom:6px">${hint}</p>`:''}
+      <textarea id="${eid}" rows="2" data-default="${defaultVal.replace(/"/g,'&quot;')}" oninput="setField('${id}',this.value)">${defaultVal}</textarea>
     </div>`;
   }
   return `<div class="field">
-    <label class="field-label">${label} ${badge}</label>
-    <input type="text" id="f-${id}" value="${esc}" data-default="${esc}" oninput="setField('${id}',this.value)" />
+    <label class="field-label">${label} <span style="font-size:13px;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:500;margin-left:4px">Tự động điền – có thể sửa</span></label>
+    ${hint?`<p class="field-hint" style="margin-bottom:6px">${hint}</p>`:''}
+    <input type="text" id="${eid}" value="${defaultVal.replace(/"/g,'&quot;')}" data-default="${defaultVal.replace(/"/g,'&quot;')}" oninput="setField('${id}',this.value)" />
   </div>`;
 }
 
-function initEditableDefaults() {
-  document.querySelectorAll('[data-default]').forEach(el => {
-    const id = el.id.replace('f-', '');
-    // Always re-populate from session data on fresh render
-    state.formData[id] = el.dataset.default;
-    el.value = el.dataset.default;
-  });
-  // Restore score inputs
-  state.filesNeeded.forEach(fn => {
-    if (fn === 4) {
-      CRITERIA.forEach((c, i) => {
-        const el = document.getElementById(`sc-${i}`);
-        if (el) el.value = state.scores[i] || 0;
-      });
-      refreshScoreDisplay();
-    }
-  });
-}
-
-// ── renderFile1–4 ─────────────────────────────────────────────
 function renderFile1() {
   const s = state.session;
-  return infoBox()
+  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:15px;color:#0c4a6e;">
+    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
+  </div>`
     + editableField('ten_de_cuong','Tên đề cương', s.mon)
     + editableField('ten_tac_gia','Tác giả (GV viết ĐCCT)', s.gvViet)
     + editableField('thoi_gian','Thời gian họp', `${s.gio} giờ, ngày ${s.ngay}`)
@@ -1168,28 +1159,30 @@ function renderFile1() {
     + editableField('ten_phan_bien','Phản biện', s.phanBien||'')
     + tf('gio_ket_thuc','Giờ kết thúc phiên họp','','VD: 09:00',false,true)
     + tf('vang_mat','Thành viên vắng mặt và lý do','','Để trống nếu không có',true)
-    + tf('phat_bieu','Tóm tắt phần phát biểu của hội đồng','','',true,true)
-    + tf('tra_loi','Tóm tắt phần trả lời của tác giả','','',true,true)
-    + tf('ket_luan_ct','Kết luận của Chủ tịch hội đồng','','',true,true)
+    + tf('phat_bieu','Tóm tắt phần phát biểu của hội đồng','','',true)
+    + tf('tra_loi','Tóm tắt phần trả lời của tác giả','','',true)
+    + tf('ket_luan_ct','Kết luận của Chủ tịch hội đồng','Tóm tắt về mục tiêu, CĐR, hình thức giảng dạy, KTĐG và giá trị sử dụng','',true)
     + tf('tong_diem','Tổng số điểm','','VD: 85')
     + tf('xep_loai','Xếp loại','','VD: Đạt / Tốt / Xuất sắc')
-    + tf('ket_luan','Kết luận','','',true,true)
-    + tf('kien_nghi','Kiến nghị của Hội đồng','','',true,true);
+    + tf('ket_luan','Kết luận','','',true)
+    + tf('kien_nghi','Kiến nghị của Hội đồng','Những điểm cần sửa chữa, bổ sung','',true);
 }
 
 function renderFile2() {
   const s = state.session;
-  return infoBox()
+  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:15px;color:#0c4a6e;">
+    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
+  </div>`
     + editableField('pb2_ten_dc','Tên đề cương', s.mon)
     + editableField('pb2_tac_gia','Tác giả', s.gvViet)
     + editableField('pb2_hocvi_tg','Học hàm/học vị tác giả', 'Thạc sĩ')
     + editableField('pb2_phan_bien','Người phản biện', s.phanBien||'')
     + editableField('pb2_hocvi_pb','Học hàm/học vị người phản biện', 'Thạc sĩ')
-    + tf('pb_hinh_thuc','1. Về hình thức','','',true,true)
-    + tf('pb_noi_dung','2. Về nội dung (mục tiêu, CĐR, hình thức dạy học, KTĐG)','','',true,true)
-    + tf('pb_y_nghia','3. Về ý nghĩa khoa học và thực tiễn','','',true,true)
-    + tf('pb_dg_chung','4. Đánh giá chung','','',true,true)
-    + tf('pb_gop_y','5. Góp ý','','',true,true)
+    + tf('pb_hinh_thuc','1. Về hình thức','','',true)
+    + tf('pb_noi_dung','2. Về nội dung (mục tiêu, CĐR, hình thức dạy học, KTĐG)','','',true)
+    + tf('pb_y_nghia','3. Về ý nghĩa khoa học và thực tiễn','','',true)
+    + tf('pb_dg_chung','4. Đánh giá chung','','',true)
+    + tf('pb_gop_y','5. Góp ý','','',true)
     + radioField('pb_ket_luan','6. Kết luận',[
         {val:'dong_y',label:'✅ Đồng ý nghiệm thu'},
         {val:'khong_dong_y',label:'❌ Không đồng ý nghiệm thu'},
@@ -1200,16 +1193,18 @@ function renderFile3() {
   const s = state.session;
   const nguoi = state.roles.includes('Thư ký') ? s.thuKy
     : state.roles.includes('Chủ tịch hội đồng') ? s.chuTich : '';
-  return infoBox()
+  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:15px;color:#0c4a6e;">
+    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
+  </div>`
     + editableField('f3_ten_dc','Tên đề cương', s.mon)
     + editableField('f3_tac_gia','Tác giả', s.gvViet)
     + editableField('f3_hocvi_tg','Học vị tác giả', 'Thạc sĩ')
     + editableField('f3_nguoi_nx','Họ tên người nhận xét', nguoi||'')
     + editableField('f3_hocvi_nx','Học vị người nhận xét', 'Thạc sĩ')
-    + tf('f3_hinh_thuc','1. Về hình thức trình bày','','',true,true)
-    + tf('f3_cau_truc','2. Về cấu trúc của đề cương','','',true,true)
-    + tf('f3_day_hoc','3. Về hình thức dạy học và kiểm tra đánh giá','','',true,true)
-    + tf('f3_gop_y','4. Đề xuất góp ý','','',true,true)
+    + tf('f3_hinh_thuc','1. Về hình thức trình bày','','',true)
+    + tf('f3_cau_truc','2. Về cấu trúc của đề cương','','',true)
+    + tf('f3_day_hoc','3. Về hình thức dạy học và kiểm tra đánh giá','','',true)
+    + tf('f3_gop_y','4. Đề xuất góp ý','','',true)
     + radioField('f3_ket_qua','5. Kết quả đánh giá',[
         {val:'dong_y',label:'✅ Đồng ý nghiệm thu'},
         {val:'khong_dong_y',label:'❌ Không đồng ý nghiệm thu'},
@@ -1220,7 +1215,9 @@ function renderFile4() {
   const s = state.session;
   const nguoi = state.roles.includes('Phản biện') ? s.phanBien
     : state.roles.includes('Chủ tịch hội đồng') ? s.chuTich : s.thuKy;
-  return infoBox()
+  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:15px;color:#0c4a6e;">
+    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
+  </div>`
     + editableField('f4_ten_hp','Tên học phần', s.mon)
     + editableField('f4_tac_gia','Họ và tên tác giả', s.gvViet)
     + editableField('f4_nguoi_dg','Họ và tên người đánh giá', nguoi||'')
@@ -1232,103 +1229,265 @@ function renderFile4() {
         <th style="width:18%;text-align:center">Điểm của bạn</th>
       </tr></thead>
       <tbody>
-        ${CRITERIA.map((c,i) => `<tr>
+        ${CRITERIA.map((c,i)=>`<tr>
           <td><div style="font-weight:600">${c.tc}</div><div class="sub-label">${c.yc}</div></td>
           <td class="score-max">${c.max}</td>
-          <td style="text-align:center"><input type="number" class="score-input" id="sc-${i}" min="0" max="${c.max}" value="${state.scores[i]||0}" oninput="updateScore(${i},this.value)" /></td>
+          <td style="text-align:center"><input type="number" class="score-input" id="sc-${i}" min="0" max="${c.max}" value="0" oninput="updateScore(${i},this.value)" /></td>
         </tr>`).join('')}
         <tr class="score-total-row">
           <td colspan="2" style="text-align:right">Tổng điểm</td>
           <td style="text-align:center;font-size:18px" id="score-total">0<span style="font-size:13px;font-weight:400;color:var(--text-secondary)">/100</span></td>
         </tr>
       </tbody>
-    </table></div>
+    </table>
+    </div>
     <div class="score-bar"><div class="score-bar-fill" id="score-bar-fill" style="width:0%;background:var(--red)"></div></div>
-    <div id="score-status" style="font-size:16px;color:var(--text-secondary);margin-top:6px;text-align:center"></div>`
-    + tf('f4_nhan_xet','Nhận xét chung','','',true,true);
+    <div id="score-status" style="font-size:16px;color:var(--text-secondary);margin-top:6px;text-align:center"></div>
+    ` + tf('f4_nhan_xet','Nhận xét chung','','',true);
 }
 
-function infoBox() {
-  return `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:15px;color:#0c4a6e;">
-    <strong>ℹ️ Thông tin hội đồng</strong> – được tự động điền, có thể chỉnh sửa nếu cần.
-  </div>`;
+function initScoreListeners() {}
+
+function initEditableDefaults() {
+  // Push default values of all pre-filled editable fields into state.formData
+  document.querySelectorAll('[data-default]').forEach(el => {
+    const id = el.id.replace('f-','');
+    if(!(id in state.formData)) {
+      state.formData[id] = el.dataset.default;
+    }
+    el.value = state.formData[id];
+  });
 }
 
 function updateScore(i, val) {
   const max = CRITERIA[i].max;
-  const n = Math.max(0, Math.min(max, parseInt(val) || 0));
+  const n = Math.max(0, Math.min(max, parseInt(val)||0));
   state.scores[i] = n;
   document.getElementById(`sc-${i}`).value = n;
-  refreshScoreDisplay();
-}
-
-function refreshScoreDisplay() {
-  const total = state.scores.reduce((a, b) => a + b, 0);
+  const total = state.scores.reduce((a,b)=>a+b,0);
   const el = document.getElementById('score-total');
-  if (el) el.innerHTML = `${total}<span style="font-size:13px;font-weight:400;color:var(--text-secondary)">/100</span>`;
+  if(el) el.innerHTML = `${total}<span style="font-size:13px;font-weight:400;color:var(--text-secondary)">/100</span>`;
   const bar = document.getElementById('score-bar-fill');
-  if (bar) {
+  if(bar) {
     bar.style.width = total + '%';
-    bar.style.background = total >= 80 ? 'var(--green)' : total >= 60 ? '#f59e0b' : 'var(--red)';
+    bar.style.background = total>=80?'var(--green)':total>=60?'#f59e0b':'var(--red)';
   }
   const status = document.getElementById('score-status');
-  if (status) status.innerHTML = total > 0
-    ? (total >= 80 ? '✅ Đạt yêu cầu phê duyệt (≥ 80 điểm)' : '⚠️ Chưa đạt yêu cầu (< 80 điểm)')
-    : '';
+  if(status) status.innerHTML = total>0?(total>=80?'✅ Đạt yêu cầu phê duyệt (≥ 80 điểm)':'⚠️ Chưa đạt yêu cầu (< 80 điểm)'):'';
 }
 
-function setField(id, val) { state.formData[id] = val; }
+function setField(id, val) {
+  state.formData[id] = val;
+}
+
+// ============================================================
+// DOCUMENT GENERATION
+// ============================================================
+function buildDoc(fileNum) {
+  const s = state.session;
+  const f = state.formData;
+  const sc = state.scores;
+
+  // Helper: get from formData if edited, else fall back to session field
+  const fd = (key, fallback='') => f[key] !== undefined ? f[key] : fallback;
+
+  if(fileNum===1) return `BIÊN BẢN HỌP HỘI ĐỒNG ĐÁNH GIÁ - NGHIỆM THU ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+================================================================================
+
+1. Tên đề cương: ${fd('ten_de_cuong', s.mon)}
+   Tác giả: ${fd('ten_tac_gia', s.gvViet)}
+
+2. Thời gian họp: ${fd('thoi_gian', s.gio + ' giờ, ngày ' + s.ngay)}
+   Thời gian kết thúc: ${fd('gio_ket_thuc','……')} giờ
+
+3. Địa điểm: ${fd('dia_diem', 'Phòng ' + s.phong + ', Trường Đại học Đồng Nai')}
+
+4. Thành phần tham dự:
+   4.1. Thành viên có mặt:
+       - Chủ tịch Hội đồng: ${fd('ten_chu_tich', s.chuTich||'')}
+       - Thư ký Hội đồng: ${fd('ten_thu_ky', s.thuKy||'')}
+       - Phản biện: ${fd('ten_phan_bien', s.phanBien||'')}
+   4.2. Thành viên vắng mặt: ${fd('vang_mat','Không có')}
+
+5. Nội dung phiên họp:
+   Sau khi ${fd('ten_thu_ky', s.thuKy||'')} đọc Quyết định thành lập Hội đồng, ${fd('ten_chu_tich', s.chuTich||'')} điều hành phiên họp.
+
+   5.1. Phần trình bày của tác giả:
+   ${fd('ten_tac_gia', s.gvViet)} trình bày tổng quan đề cương chi tiết học phần bao gồm mục tiêu, chuẩn đầu ra, hình thức giảng dạy và kiểm tra đánh giá.
+
+   5.2. Phần nhận xét của phản biện (có văn bản kèm theo).
+
+   5.3. Phần phát biểu, đặt câu hỏi:
+${fd('phat_bieu')}
+
+   5.4. Phần trả lời của tác giả:
+${fd('tra_loi')}
+
+   5.5. Kết luận của Chủ tịch Hội đồng:
+${fd('ket_luan_ct')}
+
+6. Xếp loại:
+   - Tổng số điểm: ${fd('tong_diem')}
+   - Xếp loại: ${fd('xep_loai')}
+   - Kết luận: ${fd('ket_luan')}
+
+7. Kiến nghị của Hội đồng:
+${fd('kien_nghi')}
+
+Phiên họp kết thúc vào lúc ${fd('gio_ket_thuc','……')} giờ, ngày ${s.ngay}.
+
+         CHỦ TỊCH HỘI ĐỒNG                    THƯ KÝ
+           ${fd('ten_chu_tich', s.chuTich||'')}                    ${fd('ten_thu_ky', s.thuKy||'')}`;
+
+  if(fileNum===2) return `NHẬN XÉT - PHẢN BIỆN ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+================================================================================
+
+Tên đề cương: ${fd('pb2_ten_dc', s.mon)}
+Tác giả (học hàm, học vị): ${fd('pb2_hocvi_tg','Thạc sĩ')} ${fd('pb2_tac_gia', s.gvViet)}
+Người phản biện (học hàm, học vị): ${fd('pb2_hocvi_pb','Thạc sĩ')} ${fd('pb2_phan_bien', s.phanBien||'')}
+Nơi công tác: Trường Đại học Đồng Nai – Khoa Ngoại Ngữ
+
+NHẬN XÉT:
+
+1. Về hình thức:
+${fd('pb_hinh_thuc')}
+
+2. Về nội dung:
+${fd('pb_noi_dung')}
+
+3. Về ý nghĩa khoa học và thực tiễn:
+${fd('pb_y_nghia')}
+
+4. Đánh giá chung:
+${fd('pb_dg_chung')}
+
+5. Góp ý:
+${fd('pb_gop_y')}
+
+6. Kết luận: ${f.pb_ket_luan==='dong_y'?'[X] Đồng ý nghiệm thu     [ ] Không đồng ý nghiệm thu':'[ ] Đồng ý nghiệm thu     [X] Không đồng ý nghiệm thu'}
+
+                              Đồng Nai, ngày ${s.ngay}
+                         Người nhận xét phản biện
+              ${fd('pb2_hocvi_pb','Thạc sĩ')} ${fd('pb2_phan_bien', s.phanBien||'')}`;
+
+  if(fileNum===3) return `PHIẾU ĐÁNH GIÁ – NHẬN XÉT ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+================================================================================
+
+Tên đề cương: ${fd('f3_ten_dc', s.mon)}
+Tác giả (học vị): ${fd('f3_hocvi_tg','Thạc sĩ')} ${fd('f3_tac_gia', s.gvViet)}
+Người nhận xét (học vị): ${fd('f3_hocvi_nx','Thạc sĩ')} ${fd('f3_nguoi_nx','')}
+Nơi công tác: Trường Đại học Đồng Nai – Khoa Ngoại Ngữ
+
+NỘI DUNG NHẬN XÉT:
+
+1. Về hình thức trình bày:
+${fd('f3_hinh_thuc')}
+
+2. Về cấu trúc của đề cương:
+${fd('f3_cau_truc')}
+
+3. Về hình thức dạy học và kiểm tra đánh giá:
+${fd('f3_day_hoc')}
+
+4. Đề xuất góp ý:
+${fd('f3_gop_y')}
+
+5. Kết quả đánh giá: ${f.f3_ket_qua==='dong_y'?'[X] Đồng ý nghiệm thu     [ ] Không đồng ý nghiệm thu':'[ ] Đồng ý nghiệm thu     [X] Không đồng ý nghiệm thu'}
+
+                              Đồng Nai, ngày ${s.ngay}
+                              ${fd('f3_hocvi_nx','Thạc sĩ')} ${fd('f3_nguoi_nx','')}`;
+
+  if(fileNum===4) {
+    const total = sc.reduce((a,b)=>a+b,0);
+    const scoreLines = CRITERIA.map((c,i)=>
+      `  ${c.tc.padEnd(30,' ')} (tối đa ${String(c.max).padStart(2,' ')}):  ${sc[i]}`
+    ).join('\n');
+    return `PHIẾU ĐÁNH GIÁ NGHIỆM THU ĐỀ CƯƠNG CHI TIẾT HỌC PHẦN
+(Dành cho các thành viên trong Hội đồng thẩm định)
+================================================================================
+
+Tên học phần: ${fd('f4_ten_hp', s.mon)}
+Tác giả: ${fd('f4_tac_gia', s.gvViet)}
+Người đánh giá: ${fd('f4_nguoi_dg','')}
+Ngày: ${s.ngay}
+
+TIÊU CHÍ ĐÁNH GIÁ:
+${scoreLines}
+
+TỔNG ĐIỂM: ${total} / 100
+${total>=80?'=> ĐẠT yêu cầu phê duyệt':'=> CHƯA ĐẠT yêu cầu phê duyệt (cần ≥ 80 điểm)'}
+
+Nhận xét chung:
+${f.f4_nhan_xet||''}
+
+                              Đồng Nai, ngày ${s.ngay}
+                              Người đánh giá
+                              ${nguoi}`;
+  }
+  return '';
+}
 
 // ============================================================
 // SUBMIT
 // ============================================================
+let state_isResubmit = false;
+
+async function goToStep3WithResubmitCheck() {
+  if (!state.session) return;
+  // Check if previous submission exists
+  showLoading('Đang kiểm tra...', 'Xem bạn đã nộp hồ sơ này chưa');
+  try {
+    const role = state.roles[0] || '';
+    const url  = `${GAS_URL}?action=checkSubmission&mon=${encodeURIComponent(state.session.mon)}&role=${encodeURIComponent(role)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    hideLoading();
+    if (data.exists && data.data) {
+      const d = data.data;
+      const dt = new Date(d.submittedAt).toLocaleString('vi-VN');
+      // Show resubmit confirm banner
+      document.getElementById('resubmit-banner').style.display = 'flex';
+      document.getElementById('resubmit-info').textContent =
+        `Bạn đã nộp lần ${d.lan_nop} vào ${dt}. File cũ sẽ bị ghi đè khi nộp lại.`;
+      state_isResubmit = true;
+    } else {
+      document.getElementById('resubmit-banner').style.display = 'none';
+      state_isResubmit = false;
+    }
+  } catch(e) {
+    hideLoading();
+    document.getElementById('resubmit-banner').style.display = 'none';
+    state_isResubmit = false;
+  }
+  renderFormSections();
+  goToStep(3);
+}
+
 async function handleSubmit() {
   const errEl = document.getElementById('form-error');
   errEl.style.display = 'none';
-
-  // Validate required fields (có dấu *)
-  const missing = [];
-  document.querySelectorAll('#form-sections .field').forEach(fieldDiv => {
-    const input = fieldDiv.querySelector('textarea, input[type="text"]');
-    const req   = fieldDiv.querySelector('.req');
-    if (input && req && !input.value.trim()) {
-      const labelEl = fieldDiv.querySelector('.field-label');
-      const labelText = labelEl
-        ? labelEl.textContent.replace('*','').replace('Tự động điền – có thể sửa','').trim()
-        : 'Không rõ';
-      missing.push(labelText);
-    }
-  });
-  if (missing.length > 0) {
-    document.getElementById('form-error-text').innerHTML =
-      `Vui lòng điền đầy đủ các trường bắt buộc (*):<br>` +
-      missing.map(l => `• ${l}`).join('<br>');
-    errEl.style.display = 'flex';
-    errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
-
   showLoading(
     state_isResubmit ? '🔄 Đang nộp lại hồ sơ...' : '⏳ Đang tạo hồ sơ...',
     'GAS đang copy template, điền thông tin và xuất file .docx'
   );
 
   const payload = {
-    action:      'submitHoSo',
-    gv:          state.gv,
-    session:     state.session,
-    roles:       state.roles,
+    action: 'submitHoSo',
+    gv: state.gv,
+    session: state.session,
+    roles: state.roles,
     filesNeeded: state.filesNeeded,
-    formData:    state.formData,
-    scores:      state.scores,
+    formData: state.formData,
+    scores: state.scores,
     submittedAt: new Date().toISOString(),
-    isResubmit:  state_isResubmit,
+    isResubmit: state_isResubmit,
   };
 
   try {
-    const res  = await fetch(GAS_URL, {
-      method: 'POST', mode: 'cors',
-      headers: { 'Content-Type': 'text/plain' },
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {'Content-Type': 'text/plain'},
       body: JSON.stringify(payload),
     });
     const data = await res.json();
@@ -1336,6 +1495,7 @@ async function handleSubmit() {
     if (data.success) {
       state.lastDriveLinks = data.driveLinks || {};
       renderResults(state.lastDriveLinks);
+      // Reset email block
       document.getElementById('email-delivery-input').value = '';
       document.getElementById('btn-send-email').disabled = true;
       document.getElementById('email-delivery-status').style.display = 'none';
@@ -1343,7 +1503,7 @@ async function handleSubmit() {
     } else {
       throw new Error(data.error || 'Lỗi không xác định');
     }
-  } catch (e) {
+  } catch(e) {
     hideLoading();
     document.getElementById('form-error-text').textContent =
       'Lỗi: ' + e.message + '. Vui lòng thử lại hoặc liên hệ Th.S Dương Thanh Tú.';
@@ -1357,11 +1517,12 @@ function renderResults(driveLinks) {
   document.getElementById('result-summary-text').innerHTML =
     `<strong>${tag}</strong> · ${s.mon} · ${s.ngay} · ${s.gio} · Phòng ${s.phong} · <em>Vai trò: ${state.roles.join(', ')}</em>`;
 
+  // Build file list from driveLinks keys
   const entries = Object.entries(driveLinks);
   document.getElementById('result-files').innerHTML = entries.map(([key, url]) => {
     const [fileNum, roleShort] = key.split('_');
     const m = FILE_META[Number(fileNum)];
-    const safeName = `${s.mon}_${m.name}_${roleShort}.docx`.replace(/[\/\\?%*:|"<>]/g, '-');
+    const safeName = `${s.mon}_${m.name}_${roleShort}.docx`.replace(/[\/\\?%*:|"<>]/g,'-');
     return `<div class="result-file">
       <div class="rf-header">
         <div style="background:${m.bg};color:${m.color};width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${m.icon}</div>
@@ -1371,16 +1532,17 @@ function renderResults(driveLinks) {
         </div>
         <span class="upload-status us-done">✅ Đã lên Drive</span>
       </div>
-      <div class="rf-actions">
-        <a class="btn btn-success" style="flex:1;font-size:15px;text-decoration:none;justify-content:center;display:inline-flex;align-items:center;gap:6px"
-           href="${url}" target="_blank">⬇️ Tải file .docx</a>
+      <div class="rf-actions" style="margin-top:10px">
+        <a class="btn btn-success" style="flex:1;font-size:15px;text-decoration:none;justify-content:center;display:inline-flex;align-items:center;gap:6px" href="${url}" target="_blank">
+          ⬇️ Tải file .docx
+        </a>
       </div>
     </div>`;
   }).join('') || '<p style="color:var(--text-secondary);font-size:15px;text-align:center;padding:16px">Không có file nào được tạo. Vui lòng liên hệ admin.</p>';
 }
 
 // ============================================================
-// SEND EMAIL
+// SEND FILES TO EMAIL
 // ============================================================
 async function sendFilesToEmail() {
   const email = document.getElementById('email-delivery-input').value.trim();
@@ -1394,26 +1556,31 @@ async function sendFilesToEmail() {
 
   try {
     const s = state.session;
-    const res = await fetch(GAS_URL, {
-      method: 'POST', mode: 'cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'sendFilesEmail',
-        toEmail: email,
-        gv: state.gv,
-        mon: s.mon, ngay: s.ngay, gio: s.gio, phong: s.phong,
-        roles: state.roles,
-        driveLinks: state.lastDriveLinks,
-      }),
+    const payload = {
+      action:     'sendFilesEmail',
+      toEmail:    email,
+      gv:         state.gv,
+      mon:        s.mon,
+      ngay:       s.ngay,
+      gio:        s.gio,
+      phong:      s.phong,
+      roles:      state.roles,
+      driveLinks: state.lastDriveLinks,
+    };
+    const res  = await fetch(GAS_URL, {
+      method:  'POST', mode: 'cors',
+      headers: {'Content-Type': 'text/plain'},
+      body:    JSON.stringify(payload),
     });
     const data = await res.json();
     if (data.success) {
-      status.innerHTML = `<div class="alert alert-success"><span>✅</span><div>Đã gửi email đến <strong>${email}</strong>.</div></div>`;
+      status.innerHTML = `<div class="alert alert-success" style="margin:0"><span>✅</span><div>Đã gửi email đến <strong>${email}</strong></div></div>`;
+      btn.textContent = 'Đã gửi ✓';
     } else {
-      throw new Error(data.error);
+      throw new Error(data.error || 'Lỗi không xác định');
     }
-  } catch (err) {
-    status.innerHTML = `<div class="alert alert-error"><span>⚠️</span><div>Gửi thất bại: ${err.message}</div></div>`;
+  } catch(err) {
+    status.innerHTML = `<div class="alert alert-error" style="margin:0"><span>⚠️</span><div>Lỗi: ${err.message}</div></div>`;
     btn.disabled = false;
     btn.textContent = 'Gửi';
   }
@@ -1431,34 +1598,37 @@ function showLoading(title, sub) {
 function hideLoading() {
   document.getElementById('loading-overlay').classList.remove('show');
 }
-
 function resetAll() {
-  state = { gv:null, session:null, roles:[], filesNeeded:[], formData:{}, scores:Array(18).fill(0), currentStep:1 };
+  state = {gv:null,session:null,roles:[],filesNeeded:[],formData:{},scores:Array(18).fill(0),currentStep:1};
   state_isResubmit = false;
   document.getElementById('dd-gv-display').innerHTML = '<span class="placeholder">Gõ tên để tìm nhanh...</span>';
   document.getElementById('gv-selected-info').style.display = 'none';
   document.getElementById('btn-step2').disabled = true;
   document.getElementById('dd-gv-search').value = '';
-  filterDD('gv', '');
+  filterDD('gv','');
   goToStep(1);
 }
 
 // ============================================================
 // SIGNATURE UPLOAD — Screen 5
 // ============================================================
+const SIG_FOLDER_ID = "14LAntafqmYC6PJMUoOnVUgfujoTwZdwQ";
+
+// File labels — khớp với GAS FILE_LABELS
 const SIG_FILE_LABELS = {1:"Biên bản", 2:"Nhận xét phản biện", 3:"Phiếu đánh giá", 4:"Phiếu nghiệm thu"};
 const SIG_ROLE_SHORT  = {"Chủ tịch hội đồng":"Chủ tịch", "Phản biện":"Phản biện", "Thư ký":"Thư ký"};
 
-// sigState.slots = [{ filename, fileNum, role, label, pdfDataUrl, pdfName, done }]
-let sigState = { gv: null, session: null, roles: [], slots: [] };
-
 function sigRoleNeedsFile(role, fileNum) {
-  if (role === 'Thư ký')            return [1,3,4].includes(fileNum);
-  if (role === 'Phản biện')         return [2,4].includes(fileNum);
-  if (role === 'Chủ tịch hội đồng') return [3,4].includes(fileNum);
+  if (role === "Thư ký")            return [1,3,4].includes(fileNum);
+  if (role === "Phản biện")         return [2,4].includes(fileNum);
+  if (role === "Chủ tịch hội đồng") return [3,4].includes(fileNum);
   return false;
 }
 
+// sigState.slots = [{ filename, fileNum, role, images:[], done:false }, ...]
+let sigState = { gv: null, session: null, roles: [], slots: [] };
+
+// ── Open / close ──────────────────────────────────────────────
 function openUploadScreen() {
   sigState = { gv: null, session: null, roles: [], slots: [] };
   renderSigGVDropdown();
@@ -1468,6 +1638,7 @@ function openUploadScreen() {
   document.getElementById('btn-sig-next').disabled = true;
   sigShowStepA();
   resetSigUploadBlock();
+
   document.querySelector('.progress-wrap').style.display = 'none';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-5').classList.add('active');
@@ -1494,10 +1665,11 @@ function sigBackToA() {
   sigShowStepA();
 }
 
+// ── GV dropdown ───────────────────────────────────────────────
 function renderSigGVDropdown() {
   const list = document.getElementById('dd-sig-gv-list');
   list.innerHTML = ALL_GV.map(gv => {
-    const count = SCHEDULE.filter(s=>s.gvViet===gv||s.chuTich===gv||s.phanBien===gv||s.thuKy===gv).length;
+    const count = SCHEDULE.filter(s => s.gvViet===gv||s.chuTich===gv||s.phanBien===gv||s.thuKy===gv).length;
     return `<div class="dd-item" data-label="${gv}" onclick="selectSigGV('${gv.replace(/'/g,"\\'")}')">👤 ${gv}<span class="dd-sub">${count} buổi</span></div>`;
   }).join('') + '<div class="dd-empty" style="display:none">Không tìm thấy</div>';
 }
@@ -1508,14 +1680,11 @@ function selectSigGV(gv) {
   closeAllDropdowns();
   document.getElementById('dd-sig-gv-search').value = '';
   filterDD('sig-gv', '');
-  const count = SCHEDULE.filter(s=>s.gvViet===gv||s.chuTich===gv||s.phanBien===gv||s.thuKy===gv).length;
-  document.getElementById('sig-gv-info-text').innerHTML =
-    `Xin chào <strong>${gv}</strong>! Bạn tham gia <strong>${count}</strong> buổi phản biện.`;
+  const count = SCHEDULE.filter(s => s.gvViet===gv||s.chuTich===gv||s.phanBien===gv||s.thuKy===gv).length;
+  document.getElementById('sig-gv-info-text').innerHTML = `Xin chào <strong>${gv}</strong>! Bạn tham gia <strong>${count}</strong> buổi phản biện.`;
   document.getElementById('sig-gv-info').style.display = 'flex';
   document.getElementById('btn-sig-next').disabled = false;
 }
-
-const SIG_DAY_NAMES = {'19/05/2026':'Thứ Ba, 19/05/2026','20/05/2026':'Thứ Tư, 20/05/2026','21/05/2026':'Thứ Năm, 21/05/2026'};
 
 function sigShowSessions() {
   if (!sigState.gv) return;
@@ -1524,6 +1693,9 @@ function sigShowSessions() {
   document.getElementById('sig-step-b').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// ── Session list ──────────────────────────────────────────────
+const SIG_DAY_NAMES = {'19/05/2026':'Thứ Ba, 19/05/2026','20/05/2026':'Thứ Tư, 20/05/2026','21/05/2026':'Thứ Năm, 21/05/2026'};
 
 function renderSigSessions() {
   const container = document.getElementById('sig-sessions-list');
@@ -1536,6 +1708,7 @@ function renderSigSessions() {
   }
   const byDay = {};
   sessions.forEach(s => { if (!byDay[s.ngay]) byDay[s.ngay] = []; byDay[s.ngay].push(s); });
+
   container.innerHTML = Object.entries(byDay).map(([day, rows]) => `
     <div style="font-size:16px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px;">
       📅 ${SIG_DAY_NAMES[day] || day}
@@ -1545,7 +1718,9 @@ function renderSigSessions() {
       return `<div class="session-card" onclick="selectSigSession(${row.tt})" id="sigsc-${row.tt}">
         <div class="mon-name">${row.mon}</div>
         <div class="session-meta">
-          <span>🕐 ${row.gio}</span><span>🚪 Phòng ${row.phong}</span><span>✏️ GV viết: ${row.gvViet}</span>
+          <span>🕐 ${row.gio}</span>
+          <span>🚪 Phòng ${row.phong}</span>
+          <span>✏️ GV viết: ${row.gvViet}</span>
         </div>
         <div class="roles">${roles.map(roleBadge).join('')}</div>
       </div>`;
@@ -1558,6 +1733,7 @@ function selectSigSession(tt) {
   sigState.session = row;
   sigState.roles   = getRoles(sigState.gv, row);
 
+  // Build slots: 1 slot per (role × fileNum) pair the GV needs to sign
   sigState.slots = [];
   const safe = row.mon.replace(/[\/\\?%*:|"<>]/g, '-').trim();
   sigState.roles.forEach(role => {
@@ -1565,29 +1741,35 @@ function selectSigSession(tt) {
     [1,2,3,4].forEach(fileNum => {
       if (!sigRoleNeedsFile(role, fileNum)) return;
       sigState.slots.push({
-        key:       `${fileNum}_${rs}`,
-        fileNum,   role,
-        filename:  `${safe}_${SIG_FILE_LABELS[fileNum]}_${rs}.pdf`,
-        label:     `${SIG_FILE_LABELS[fileNum]} — ${rs}`,
-        pdfDataUrl: null,
-        pdfName:    null,
-        done:       false,
+        key: `${fileNum}_${rs}`,
+        fileNum,
+        role,
+        // Tên PDF = tên docx đổi đuôi — khớp hoàn toàn
+        filename: `${safe}_${SIG_FILE_LABELS[fileNum]}_${rs}.pdf`,
+        label: `${SIG_FILE_LABELS[fileNum]} — ${rs}`,
+        images: [],
+        pdfFile: null,   // { dataUrl, name } nếu upload PDF
+        done: false,
       });
     });
   });
 
+  // Highlight card
   document.querySelectorAll('#sig-sessions-list .session-card').forEach(c => c.classList.remove('selected'));
   document.getElementById(`sigsc-${tt}`)?.classList.add('selected');
 
+  // Session summary
   document.getElementById('sig-session-summary').innerHTML = `
     <strong>${row.mon}</strong> · ${row.ngay} · ${row.gio} · Phòng ${row.phong}<br>
     <span style="font-size:14px;color:var(--text-secondary)">GV viết: ${row.gvViet}</span>
-    ${sigState.roles.length ? ' · ' + sigState.roles.map(roleBadge).join(' ') : ''}`;
+    ${sigState.roles.length ? ' · ' + sigState.roles.map(roleBadge).join(' ') : ''}
+  `;
 
   resetSigUploadBlock();
   renderSigSlots();
   document.getElementById('sig-upload-block').style.display = 'block';
   checkSigReady();
+
   setTimeout(() => document.getElementById('sig-upload-block').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
 }
 
@@ -1598,7 +1780,7 @@ function renderSigSlots() {
       <div class="sig-slot-header">
         <span class="slot-icon">📄</span>
         <span class="slot-name">${slot.label}</span>
-        <span class="slot-status ${slot.done?'done':'pending'}" id="slot-status-${idx}">
+        <span class="slot-status ${slot.done ? 'done' : 'pending'}" id="slot-status-${idx}">
           ${slot.done ? '✅ Đã upload' : '⏳ Chưa upload'}
         </span>
       </div>
@@ -1608,13 +1790,13 @@ function renderSigSlots() {
         </div>
         <div class="drop-zone" id="dz-${idx}"
           ondragover="slotDragOver(event,${idx})" ondragleave="slotDragLeave(event,${idx})" ondrop="slotDrop(event,${idx})">
-          <input type="file" id="slot-input-${idx}" accept="application/pdf"
+          <input type="file" id="slot-input-${idx}" accept="image/*,application/pdf" multiple
             onchange="slotFilesSelected(this.files, ${idx})" />
           <div class="dz-icon">📄</div>
-          <div class="dz-label">Chọn file PDF</div>
-          <div class="dz-sub">Chỉ nhận file .pdf</div>
+          <div class="dz-label">Chọn ảnh hoặc file PDF</div>
+          <div class="dz-sub">Ảnh (nhiều trang) hoặc 1 file PDF</div>
         </div>
-        <div id="slot-preview-${idx}"></div>
+        <div id="slot-preview-${idx}" class="img-preview-grid"></div>
       </div>
     </div>
   `).join('');
@@ -1639,47 +1821,82 @@ function slotDrop(e, idx) {
 }
 
 function slotFilesSelected(files, idx) {
-  const file = Array.from(files).find(f => f.type === 'application/pdf');
-  if (!file) { alert('Vui lòng chọn file PDF.'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    sigState.slots[idx].pdfDataUrl = e.target.result;
-    sigState.slots[idx].pdfName   = file.name;
-    renderSlotPreview(idx);
-  };
-  reader.readAsDataURL(file);
+  const arr = Array.from(files);
+
+  // Nếu có PDF → ưu tiên PDF, bỏ qua ảnh
+  const pdfFile = arr.find(f => f.type === 'application/pdf');
+  if (pdfFile) {
+    sigState.slots[idx].images = [];   // xóa ảnh cũ nếu có
+    const reader = new FileReader();
+    reader.onload = e => {
+      sigState.slots[idx].pdfFile = { dataUrl: e.target.result, name: pdfFile.name };
+      renderSlotPreview(idx);
+    };
+    reader.readAsDataURL(pdfFile);
+    return;
+  }
+
+  // Không có PDF → xử lý ảnh như cũ
+  const imgs = arr.filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) return;
+  sigState.slots[idx].pdfFile = null;  // xóa PDF cũ nếu có
+  let loaded = 0;
+  imgs.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      sigState.slots[idx].images.push({ dataUrl: e.target.result });
+      loaded++;
+      if (loaded === imgs.length) renderSlotPreview(idx);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function renderSlotPreview(idx) {
   const slot = sigState.slots[idx];
   const grid = document.getElementById(`slot-preview-${idx}`);
-  if (slot.pdfDataUrl) {
+
+  if (slot.pdfFile) {
+    // Hiện tên file PDF + nút xóa
     grid.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border)">
-        <span style="font-size:20px">📄</span>
-        <span style="font-size:14px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${slot.pdfName}</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;
+                  background:#f0fdf4;border:1px solid #86efac;border-radius:8px;">
+        <span style="font-size:22px">📄</span>
+        <span style="font-size:14px;color:var(--text);flex:1;overflow:hidden;
+                     text-overflow:ellipsis;white-space:nowrap">${slot.pdfFile.name}</span>
         <button class="thumb-del" onclick="slotRemovePdf(${idx})">✕</button>
       </div>`;
   } else {
-    grid.innerHTML = '';
+    // Hiện grid ảnh như cũ
+    grid.innerHTML = slot.images.map((img, i) => `
+      <div class="img-thumb">
+        <img src="${img.dataUrl}" alt="Trang ${i+1}" />
+        <button class="thumb-del" onclick="slotRemoveImg(${idx},${i})">✕</button>
+        <div class="thumb-num">Trang ${i+1}</div>
+      </div>
+    `).join('');
   }
   checkSigReady();
 }
 
 function slotRemovePdf(idx) {
-  sigState.slots[idx].pdfDataUrl = null;
-  sigState.slots[idx].pdfName   = null;
+  sigState.slots[idx].pdfFile = null;
   const input = document.getElementById(`slot-input-${idx}`);
   if (input) input.value = '';
   renderSlotPreview(idx);
 }
 
+function slotRemoveImg(idx, imgIdx) {
+  sigState.slots[idx].images.splice(imgIdx, 1);
+  renderSlotPreview(idx);
+}
+
 function checkSigReady() {
-  const anyReady = sigState.slots.some(s => s.pdfDataUrl);
+  const anyReady = sigState.slots.some(s => s.pdfFile || s.images.length > 0);
   document.getElementById('btn-sig-submit').disabled = !anyReady;
 }
 
-// ── Submit PDF có chữ ký ──────────────────────────────────────
+// ── Submit — lần lượt từng slot ───────────────────────────────
 async function submitSignaturePDF() {
   document.getElementById('sig-error').style.display = 'none';
   document.getElementById('sig-success').style.display = 'none';
@@ -1689,24 +1906,52 @@ async function submitSignaturePDF() {
   progWrap.style.display = 'block';
   document.getElementById('btn-sig-submit').disabled = true;
 
-  const slotsToUpload = sigState.slots.filter(s => s.pdfDataUrl && !s.done);
-  const total   = slotsToUpload.length;
-  let uploaded  = 0;
-  const errors  = [];
+  const slotsToUpload = sigState.slots.filter(s => (s.pdfFile || s.images.length > 0) && !s.done);
+  const total = slotsToUpload.length;
+  let uploaded = 0;
+  const errors = [];
 
   try {
     for (const slot of slotsToUpload) {
-      progLabel.textContent = `Đang upload: ${slot.filename} (${uploaded+1}/${total})...`;
-      progFill.style.width  = `${(uploaded / total) * 90}%`;
+      progLabel.textContent = `Đang xử lý: ${slot.label} (${uploaded+1}/${total})...`;
+      progFill.style.width = `${(uploaded / total) * 90}%`;
 
-      const pdfBase64 = slot.pdfDataUrl.split(',')[1];
+      let pdfBase64;
+
+      if (slot.pdfFile) {
+        // PDF upload trực tiếp — không cần jsPDF
+        progLabel.textContent = `Đang upload PDF: ${slot.filename}...`;
+        pdfBase64 = slot.pdfFile.dataUrl.split(',')[1];
+      } else {
+        // Ảnh → ghép PDF bằng jsPDF như cũ
+        progLabel.textContent = `Đang tạo PDF từ ảnh: ${slot.label} (${uploaded+1}/${total})...`;
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+        const A4_W = 210, A4_H = 297;
+        for (let i = 0; i < slot.images.length; i++) {
+          if (i > 0) pdf.addPage();
+          await new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => {
+              const ratio = Math.min(A4_W / img.naturalWidth, A4_H / img.naturalHeight);
+              const w = img.naturalWidth * ratio, h = img.naturalHeight * ratio;
+              const fmt = slot.images[i].dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
+              pdf.addImage(slot.images[i].dataUrl, fmt, (A4_W-w)/2, (A4_H-h)/2, w, h);
+              resolve();
+            };
+            img.src = slot.images[i].dataUrl;
+          });
+        }
+        progLabel.textContent = `Đang upload: ${slot.filename}...`;
+        pdfBase64 = pdf.output('datauristring').split(',')[1];
+      }
       const res = await fetch(GAS_URL, {
         method: 'POST', mode: 'cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           action: 'uploadSignedPDF',
-          gv:     sigState.gv,
-          mon:    sigState.session.mon,
+          gv: sigState.gv,
+          mon: sigState.session.mon,
           filename: slot.filename,
           pdfBase64,
           folderIdSigned: SIG_FOLDER_ID,
@@ -1715,6 +1960,7 @@ async function submitSignaturePDF() {
       const data = await res.json();
       if (data.success) {
         slot.done = true;
+        // Update status badge
         const statusEl = document.getElementById(`slot-status-${sigState.slots.indexOf(slot)}`);
         if (statusEl) { statusEl.textContent = '✅ Đã upload'; statusEl.className = 'slot-status done'; }
         uploaded++;
@@ -1723,7 +1969,7 @@ async function submitSignaturePDF() {
       }
     }
 
-    progFill.style.width  = '100%';
+    progFill.style.width = '100%';
     progWrap.style.display = 'none';
 
     if (errors.length === 0) {
@@ -1743,6 +1989,12 @@ async function submitSignaturePDF() {
     document.getElementById('btn-sig-submit').disabled = false;
   }
 }
+
+// kept for legacy drag-drop on old drop-zone id (no-op now)
+function sigDragOver(e)  { e.preventDefault(); }
+function sigDragLeave(e) {}
+function sigDrop(e)      { e.preventDefault(); }
+
 
 // Init
 init();

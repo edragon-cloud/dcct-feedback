@@ -948,8 +948,10 @@ function goToStep3() {
 }
 
 function goBackAndResubmit() {
-  // Go back to form (step 3) with data still intact for editing
   state_isResubmit = true;
+  // Reset formData để initEditableDefaults() re-populate sạch từ session data
+  state.formData = {};
+  state.scores = Array(18).fill(0);
   document.getElementById('resubmit-banner').style.display = 'flex';
   document.getElementById('resubmit-info').textContent = 'Bạn đang chỉnh sửa để nộp lại. File cũ sẽ bị ghi đè.';
   renderFormSections();
@@ -1466,6 +1468,29 @@ async function goToStep3WithResubmitCheck() {
 async function handleSubmit() {
   const errEl = document.getElementById('form-error');
   errEl.style.display = 'none';
+
+  // Validate tất cả required fields (có dấu * đỏ)
+  const missingLabels = [];
+  document.querySelectorAll('#form-sections .field').forEach(fieldDiv => {
+    const input = fieldDiv.querySelector('textarea, input[type="text"]');
+    const req   = fieldDiv.querySelector('.req');
+    if (input && req && !input.value.trim()) {
+      const labelEl = fieldDiv.querySelector('.field-label');
+      const labelText = labelEl
+        ? labelEl.textContent.replace('*','').replace('Tự động điền – có thể sửa','').trim()
+        : 'Không rõ';
+      missingLabels.push(labelText);
+    }
+  });
+  if (missingLabels.length > 0) {
+    document.getElementById('form-error-text').innerHTML =
+      `Vui lòng điền đầy đủ các trường bắt buộc (*):<br>` +
+      missingLabels.map(l => `• ${l}`).join('<br>');
+    errEl.style.display = 'flex';
+    errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
   showLoading(
     state_isResubmit ? '🔄 Đang nộp lại hồ sơ...' : '⏳ Đang tạo hồ sơ...',
     'GAS đang copy template, điền thông tin và xuất file .docx'
@@ -1625,7 +1650,7 @@ function sigRoleNeedsFile(role, fileNum) {
   return false;
 }
 
-// sigState.slots = [{ filename, fileNum, role, images:[], done:false }, ...]
+// sigState.slots = [{ filename, fileNum, role, pdfDataUrl, pdfName, done }, ...]
 let sigState = { gv: null, session: null, roles: [], slots: [] };
 
 // ── Open / close ──────────────────────────────────────────────
@@ -1744,10 +1769,10 @@ function selectSigSession(tt) {
         key: `${fileNum}_${rs}`,
         fileNum,
         role,
-        // Tên PDF = tên docx đổi đuôi — khớp hoàn toàn
         filename: `${safe}_${SIG_FILE_LABELS[fileNum]}_${rs}.pdf`,
         label: `${SIG_FILE_LABELS[fileNum]} — ${rs}`,
-        images: [],
+        pdfDataUrl: null,
+        pdfName: null,
         done: false,
       });
     });

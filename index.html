@@ -744,7 +744,7 @@
 // ============================================================
 // CONFIG — SỬA URL NÀY SAU KHI DEPLOY GAS
 // ============================================================
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw7MurVIJfQrbTq3ALrqyJ9z-ULoLHUewara2ZwU4OAo9P7sDTRX6EEiYJnNWiCNjRp/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwThTfGReHHS7LhFXY5TEOM79GbeL9SohsHHfGUgxv2dktxnlXn9Voq89flRDFIOKSx/exec";
 
 // ============================================================
 // DATA
@@ -1789,11 +1789,11 @@ function renderSigSlots() {
         </div>
         <div class="drop-zone" id="dz-${idx}"
           ondragover="slotDragOver(event,${idx})" ondragleave="slotDragLeave(event,${idx})" ondrop="slotDrop(event,${idx})">
-          <input type="file" id="slot-input-${idx}" accept="image/*" multiple
+          <input type="file" id="slot-input-${idx}" accept="application/pdf"
             onchange="slotFilesSelected(this.files, ${idx})" />
-          <div class="dz-icon">📷</div>
-          <div class="dz-label">Chụp hoặc chọn ảnh</div>
-          <div class="dz-sub">Nhiều ảnh → nhiều trang PDF</div>
+          <div class="dz-icon">📄</div>
+          <div class="dz-label">Chọn file PDF</div>
+          <div class="dz-sub">Chỉ nhận file .pdf</div>
         </div>
         <div id="slot-preview-${idx}" class="img-preview-grid"></div>
       </div>
@@ -1820,41 +1820,45 @@ function slotDrop(e, idx) {
 }
 
 function slotFilesSelected(files, idx) {
-  const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
-  if (!arr.length) return;
-  let loaded = 0;
-  arr.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      sigState.slots[idx].images.push({ dataUrl: e.target.result });
-      loaded++;
-      if (loaded === arr.length) renderSlotPreview(idx);
-    };
-    reader.readAsDataURL(file);
-  });
+  const file = Array.from(files).find(f => f.type === 'application/pdf');
+  if (!file) { alert('Vui lòng chọn file PDF.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    sigState.slots[idx].pdfDataUrl = e.target.result;
+    sigState.slots[idx].pdfName   = file.name;
+    renderSlotPreview(idx);
+  };
+  reader.readAsDataURL(file);
 }
 
 function renderSlotPreview(idx) {
   const slot = sigState.slots[idx];
   const grid = document.getElementById(`slot-preview-${idx}`);
-  grid.innerHTML = slot.images.map((img, i) => `
-    <div class="img-thumb">
-      <img src="${img.dataUrl}" alt="Trang ${i+1}" />
-      <button class="thumb-del" onclick="slotRemoveImg(${idx},${i})">✕</button>
-      <div class="thumb-num">Trang ${i+1}</div>
-    </div>
-  `).join('');
+  if (slot.pdfDataUrl) {
+    grid.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border)">
+        <span style="font-size:20px">📄</span>
+        <span style="font-size:14px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${slot.pdfName}</span>
+        <button class="thumb-del" onclick="slotRemovePdf(${idx})">✕</button>
+      </div>`;
+  } else {
+    grid.innerHTML = '';
+  }
   checkSigReady();
 }
 
-function slotRemoveImg(idx, imgIdx) {
-  sigState.slots[idx].images.splice(imgIdx, 1);
+function slotRemovePdf(idx) {
+  sigState.slots[idx].pdfDataUrl = null;
+  sigState.slots[idx].pdfName   = null;
+  // Reset input so same file can be re-selected
+  const input = document.getElementById(`slot-input-${idx}`);
+  if (input) input.value = '';
   renderSlotPreview(idx);
 }
 
 function checkSigReady() {
-  // Enable submit nếu ít nhất 1 slot có ảnh
-  const anyReady = sigState.slots.some(s => s.images.length > 0);
+  // Enable submit nếu ít nhất 1 slot có PDF
+  const anyReady = sigState.slots.some(s => s.pdfDataUrl);
   document.getElementById('btn-sig-submit').disabled = !anyReady;
 }
 
@@ -1868,38 +1872,17 @@ async function submitSignaturePDF() {
   progWrap.style.display = 'block';
   document.getElementById('btn-sig-submit').disabled = true;
 
-  const slotsToUpload = sigState.slots.filter(s => s.images.length > 0 && !s.done);
+  const slotsToUpload = sigState.slots.filter(s => s.pdfDataUrl && !s.done);
   const total = slotsToUpload.length;
   let uploaded = 0;
   const errors = [];
 
   try {
-    const { jsPDF } = window.jspdf;
-
     for (const slot of slotsToUpload) {
-      progLabel.textContent = `Đang tạo PDF: ${slot.label} (${uploaded+1}/${total})...`;
+      progLabel.textContent = `Đang upload: ${slot.filename} (${uploaded+1}/${total})...`;
       progFill.style.width = `${(uploaded / total) * 90}%`;
 
-      // Build PDF cho slot này
-      const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-      const A4_W = 210, A4_H = 297;
-      for (let i = 0; i < slot.images.length; i++) {
-        if (i > 0) pdf.addPage();
-        await new Promise(resolve => {
-          const img = new Image();
-          img.onload = () => {
-            const ratio = Math.min(A4_W / img.naturalWidth, A4_H / img.naturalHeight);
-            const w = img.naturalWidth * ratio, h = img.naturalHeight * ratio;
-            const fmt = slot.images[i].dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
-            pdf.addImage(slot.images[i].dataUrl, fmt, (A4_W-w)/2, (A4_H-h)/2, w, h);
-            resolve();
-          };
-          img.src = slot.images[i].dataUrl;
-        });
-      }
-
-      progLabel.textContent = `Đang upload: ${slot.filename}...`;
-      const pdfBase64 = pdf.output('datauristring').split(',')[1];
+      const pdfBase64 = slot.pdfDataUrl.split(',')[1];
       const res = await fetch(GAS_URL, {
         method: 'POST', mode: 'cors',
         headers: { 'Content-Type': 'text/plain' },

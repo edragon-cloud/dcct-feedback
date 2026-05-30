@@ -587,6 +587,7 @@
       </div>
     </div>
     <div id="result-files"></div>
+          <div id="result-incomplete-warning" style="display:none"></div>
 
     <!-- Email delivery block -->
     <div class="card" style="margin-top:12px;border:1.5px solid #dbeafe;">
@@ -832,6 +833,7 @@ let state = {
   formData: {},
   scores: Array(18).fill(0),
   currentStep: 1,
+  gvSubmissions: {},  // { mon: { filesSubmitted:[1,3,4], submittedAt } } — từ server
 };
 
 // ============================================================
@@ -899,6 +901,7 @@ function renderGVDropdown() {
 function selectGV(gv) {
   state.gv = gv;
   state.session = null;
+  state.gvSubmissions = {};  // reset khi đổi GV
   document.getElementById('dd-gv-display').innerHTML = `<span class="selected-val">👤 ${gv}</span>`;
   closeAllDropdowns();
   document.getElementById('dd-gv-search').value = '';
@@ -909,6 +912,22 @@ function selectGV(gv) {
   document.getElementById('gv-info-text').innerHTML = `Xin chào <strong>${gv}</strong>! Bạn tham gia <strong>${sessions.length}</strong> buổi phản biện.`;
   info.style.display = 'flex';
   document.getElementById('btn-step2').disabled = false;
+  // Fetch lịch sử nộp thật từ Sheet (async, silent)
+  fetchGVSubmissions(gv);
+}
+
+async function fetchGVSubmissions(gv) {
+  try {
+    const url = `${GAS_URL}?action=getSubmissionsForGV&gv=${encodeURIComponent(gv)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.submissions) {
+      state.gvSubmissions = {};
+      data.submissions.forEach(s => { state.gvSubmissions[s.mon] = s; });
+      // Re-render nếu đang ở step 2 để badge cập nhật
+      if (state.currentStep === 2) renderSessionList();
+    }
+  } catch(e) { /* silent fail — localStorage fallback vẫn hoạt động */ }
 }
 
 // ============================================================
@@ -1007,6 +1026,22 @@ function renderSessions() {
     ${rows.map(row=>{
       const roles = getRoles(state.gv, row);
       const isSelected = state.session && state.session.tt === row.tt;
+      // Trạng thái nộp từ localStorage
+      // Server data ưu tiên, localStorage là fallback
+      const hist = state.gvSubmissions[row.mon] || getHistoryFor(state.gv, row.mon);
+      const filesNeededRow = getFilesNeeded(roles);
+      let statusBadge = '';
+      if (hist && filesNeededRow.length > 0) {
+        const submitted = hist.filesSubmitted;
+        const missing   = filesNeededRow.filter(fn => !submitted.includes(fn));
+        if (missing.length === 0) {
+          statusBadge = `<div style="margin-top:6px;font-size:13px;font-weight:600;color:#15803d;background:#dcfce7;display:inline-block;padding:3px 10px;border-radius:10px">✅ Đã nộp đủ F${submitted.slice().sort().join(', F')}</div>`;
+        } else {
+          statusBadge = `<div style="margin-top:6px;font-size:13px;font-weight:600;color:#92400e;background:#fff7ed;display:inline-block;padding:3px 10px;border-radius:10px">⚠️ Đã nộp F${submitted.slice().sort().join(', F')} · Còn thiếu ${missing.map(fn=>'F'+fn).join(', ')}</div>`;
+        }
+      } else if (filesNeededRow.length > 0) {
+        statusBadge = `<div style="margin-top:6px;font-size:13px;color:#64748b;background:#f1f5f9;display:inline-block;padding:3px 10px;border-radius:10px">📋 Chưa nộp</div>`;
+      }
       return `<div class="session-card${isSelected?' selected':''}" onclick="selectSession(${row.tt})" id="sc-${row.tt}">
         <div class="mon-name">${row.mon}</div>
         <div class="session-meta">
@@ -1015,6 +1050,7 @@ function renderSessions() {
           <span>✏️ GV viết: ${row.gvViet}</span>
         </div>
         <div class="roles">${roles.map(roleBadge).join('')}</div>
+        ${statusBadge}
       </div>`;
     }).join('')}
   `).join('');
@@ -1071,10 +1107,11 @@ function renderFormSections() {
     <div class="file-section">
       <div class="file-section-header" onclick="toggleSection(${fn})">
         <div class="file-num-badge" style="background:#${colorNum}1a;color:#${colorNum}">F${fn}</div>
-        <div>
+        <div style="flex:1">
           <div class="file-title">${m.icon} ${m.name}</div>
           <div class="file-who">${m.who}</div>
         </div>
+        <span id="file-status-${fn}" style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:12px;background:#fef9c3;color:#92400e;white-space:nowrap;margin-right:8px">⚠️ Chưa đủ</span>
         <div class="toggle-arrow">▼</div>
       </div>
       <div class="file-section-body" id="fsb-${fn}">
@@ -1085,6 +1122,20 @@ function renderFormSections() {
   document.getElementById('form-sections').innerHTML = html;
   initEditableDefaults();
   initScoreListeners();
+  // Hook tất cả input/textarea/radio trong form để cập nhật badge live
+  document.querySelectorAll('#form-sections input, #form-sections textarea').forEach(el => {
+    el.addEventListener('input', () => {
+      // Tìm fn từ id field
+      [1,2,3,4].forEach(fn => refreshFileStatus(fn));
+    });
+  });
+  document.querySelectorAll('#form-sections input[type=radio]').forEach(el => {
+    el.addEventListener('change', () => {
+      [1,2,3,4].forEach(fn => refreshFileStatus(fn));
+    });
+  });
+  // Cập nhật ngay sau khi render (editableFields đã có giá trị)
+  setTimeout(() => { [1,2,3,4].forEach(fn => refreshFileStatus(fn)); }, 50);
 }
 
 function toggleSection(fn) {
@@ -1247,6 +1298,84 @@ function renderFile4() {
 }
 
 function initScoreListeners() {}
+
+// ============================================================
+// PER-FILE VALIDATION
+// ============================================================
+const FILE_REQUIRED_FIELDS = {
+  1: ['gio_ket_thuc','phat_bieu','tra_loi','ket_luan_ct','ket_luan','kien_nghi'],
+  2: ['pb_hinh_thuc','pb_noi_dung','pb_y_nghia','pb_dg_chung','pb_gop_y','pb_ket_luan'],
+  3: ['f3_hinh_thuc','f3_cau_truc','f3_day_hoc','f3_gop_y','f3_ket_qua'],
+  4: ['f4_nhan_xet'],
+};
+
+// Đọc giá trị field: ưu tiên DOM (live) rồi mới state.formData
+function getFieldVal(id) {
+  const el = document.getElementById('f-' + id);
+  if (el) return el.value ? el.value.trim() : '';
+  return (state.formData[id] || '').toString().trim();
+}
+
+function isFileComplete(fn) {
+  return (FILE_REQUIRED_FIELDS[fn] || []).every(id => getFieldVal(id) !== '');
+}
+
+// Trả về danh sách field còn trống của 1 file
+function getMissingFields(fn) {
+  const LABELS = {
+    gio_ket_thuc:'Giờ kết thúc', phat_bieu:'Phần phát biểu',
+    tra_loi:'Phần trả lời', ket_luan_ct:'Kết luận Chủ tịch',
+    ket_luan:'Kết luận', kien_nghi:'Kiến nghị',
+    pb_hinh_thuc:'Về hình thức', pb_noi_dung:'Về nội dung',
+    pb_y_nghia:'Về ý nghĩa', pb_dg_chung:'Đánh giá chung',
+    pb_gop_y:'Góp ý', pb_ket_luan:'Kết luận (chọn)',
+    f3_hinh_thuc:'Về hình thức', f3_cau_truc:'Về cấu trúc',
+    f3_day_hoc:'Về dạy học/KTĐG', f3_gop_y:'Đề xuất góp ý',
+    f3_ket_qua:'Kết quả (chọn)', f4_nhan_xet:'Nhận xét chung',
+  };
+  return (FILE_REQUIRED_FIELDS[fn] || [])
+    .filter(id => getFieldVal(id) === '')
+    .map(id => LABELS[id] || id);
+}
+
+// Cập nhật badge status trên header từng file (gọi sau mỗi oninput)
+function refreshFileStatus(fn) {
+  const badge = document.getElementById('file-status-' + fn);
+  if (!badge) return;
+  if (isFileComplete(fn)) {
+    badge.innerHTML = '✅ Đầy đủ';
+    badge.style.background = '#dcfce7';
+    badge.style.color = '#15803d';
+  } else {
+    badge.innerHTML = '⚠️ Chưa đủ';
+    badge.style.background = '#fef9c3';
+    badge.style.color = '#92400e';
+  }
+}
+
+// ============================================================
+// SUBMISSION HISTORY — localStorage
+// ============================================================
+const LS_KEY = 'dcct_submit_v1';
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function saveHistory(gv, mon, filesSubmitted) {
+  const h = loadHistory();
+  const key = gv + '|||' + mon;
+  const prev = h[key] || { filesSubmitted: [] };
+  // Merge: thêm file mới, không xóa file cũ
+  const merged = [...new Set([...prev.filesSubmitted, ...filesSubmitted])];
+  h[key] = { filesSubmitted: merged, submittedAt: new Date().toISOString() };
+  localStorage.setItem(LS_KEY, JSON.stringify(h));
+}
+
+function getHistoryFor(gv, mon) {
+  const h = loadHistory();
+  return h[gv + '|||' + mon] || null;
+}
 
 function initEditableDefaults() {
   // Push default values of all pre-filled editable fields into state.formData
@@ -1466,8 +1595,39 @@ async function goToStep3WithResubmitCheck() {
 async function handleSubmit() {
   const errEl = document.getElementById('form-error');
   errEl.style.display = 'none';
+
+  // ── Kiểm tra từng file ──────────────────────────────────
+  const completeFiles   = state.filesNeeded.filter(fn => isFileComplete(fn));
+  const incompleteFiles = state.filesNeeded.filter(fn => !isFileComplete(fn));
+
+  if (completeFiles.length === 0) {
+    // Tất cả đều chưa đủ → block
+    const detail = incompleteFiles.map(fn => {
+      const missing = getMissingFields(fn);
+      return `<strong>F${fn} – ${FILE_META[fn].name}:</strong> còn thiếu ${missing.join(', ')}`;
+    }).join('<br>');
+    document.getElementById('form-error-text').innerHTML =
+      'Chưa có file nào đầy đủ để nộp. Vui lòng điền thêm:<br>' + detail;
+    errEl.style.display = 'flex';
+    errEl.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+
+  // Có file chưa đủ → hỏi xác nhận
+  if (incompleteFiles.length > 0) {
+    const names = incompleteFiles.map(fn => `F${fn} – ${FILE_META[fn].name}`).join(', ');
+    const detail = incompleteFiles.map(fn => {
+      const missing = getMissingFields(fn);
+      return `• F${fn} – ${FILE_META[fn].name}: còn thiếu ${missing.join(', ')}`;
+    }).join('\n');
+    const ok = confirm(
+      `Các file sau chưa điền đủ và sẽ KHÔNG được nộp lần này:\n${detail}\n\nChỉ nộp ${completeFiles.map(fn=>'F'+fn).join(', ')}?\nBấm OK để tiếp tục, Cancel để quay lại điền.`
+    );
+    if (!ok) return;
+  }
+
   showLoading(
-    state_isResubmit ? '🔄 Đang nộp lại hồ sơ...' : '⏳ Đang tạo hồ sơ...',
+    state_isResubmit ? 'Đang nộp lại hồ sơ...' : 'Đang tạo hồ sơ...',
     'GAS đang copy template, điền thông tin và xuất file .docx'
   );
 
@@ -1476,7 +1636,7 @@ async function handleSubmit() {
     gv: state.gv,
     session: state.session,
     roles: state.roles,
-    filesNeeded: state.filesNeeded,
+    filesNeeded: completeFiles,   // ← chỉ nộp file đầy đủ
     formData: state.formData,
     scores: state.scores,
     submittedAt: new Date().toISOString(),
@@ -1494,7 +1654,16 @@ async function handleSubmit() {
     hideLoading();
     if (data.success) {
       state.lastDriveLinks = data.driveLinks || {};
-      renderResults(state.lastDriveLinks);
+      // Lưu lịch sử nộp vào localStorage + cập nhật state.gvSubmissions ngay
+      saveHistory(state.gv, state.session.mon, completeFiles);
+      const mon = state.session.mon;
+      if (!state.gvSubmissions[mon]) state.gvSubmissions[mon] = { filesSubmitted: [] };
+      completeFiles.forEach(fn => {
+        if (!state.gvSubmissions[mon].filesSubmitted.includes(fn))
+          state.gvSubmissions[mon].filesSubmitted.push(fn);
+      });
+      state.gvSubmissions[mon].submittedAt = new Date().toISOString();
+      renderResults(state.lastDriveLinks, incompleteFiles);
       // Reset email block
       document.getElementById('email-delivery-input').value = '';
       document.getElementById('btn-send-email').disabled = true;
@@ -1511,7 +1680,7 @@ async function handleSubmit() {
   }
 }
 
-function renderResults(driveLinks) {
+function renderResults(driveLinks, incompleteFiles=[]) {
   const s   = state.session;
   const tag = state_isResubmit ? '🔄 Nộp lại' : '✅ Nộp mới';
   document.getElementById('result-summary-text').innerHTML =
@@ -1539,6 +1708,19 @@ function renderResults(driveLinks) {
       </div>
     </div>`;
   }).join('') || '<p style="color:var(--text-secondary);font-size:15px;text-align:center;padding:16px">Không có file nào được tạo. Vui lòng liên hệ admin.</p>';
+
+  // Cảnh báo file chưa nộp
+  const warnEl = document.getElementById('result-incomplete-warning');
+  if (incompleteFiles.length > 0 && warnEl) {
+    const names = incompleteFiles.map(fn => `F${fn} – ${FILE_META[fn].name}`).join(', ');
+    warnEl.innerHTML = `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;margin-top:16px;font-size:15px;color:#92400e;">
+      <strong>⚠️ Chưa nộp:</strong> ${names}<br>
+      <span style="font-size:13px;color:#b45309">Vào lại ứng dụng, chọn lại môn này để nộp bổ sung.</span>
+    </div>`;
+    warnEl.style.display = 'block';
+  } else if (warnEl) {
+    warnEl.style.display = 'none';
+  }
 }
 
 // ============================================================
@@ -1599,7 +1781,7 @@ function hideLoading() {
   document.getElementById('loading-overlay').classList.remove('show');
 }
 function resetAll() {
-  state = {gv:null,session:null,roles:[],filesNeeded:[],formData:{},scores:Array(18).fill(0),currentStep:1};
+  state = {gv:null,session:null,roles:[],filesNeeded:[],formData:{},scores:Array(18).fill(0),currentStep:1,gvSubmissions:{}};
   state_isResubmit = false;
   document.getElementById('dd-gv-display').innerHTML = '<span class="placeholder">Gõ tên để tìm nhanh...</span>';
   document.getElementById('gv-selected-info').style.display = 'none';
